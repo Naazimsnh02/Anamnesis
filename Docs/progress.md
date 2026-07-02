@@ -9,7 +9,7 @@ Tracks progress against `Docs/Implementation-Plan.md`. Add a dated entry every t
 | Phase | Status |
 |---|---|
 | 0 — Infra & Environment Setup | **Complete** |
-| 1 — Remember | Not started |
+| 1 — Remember | **Complete** |
 | 2 — Recall | Not started |
 | 3 — Improve | Not started |
 | 4 — Forget | Not started |
@@ -19,6 +19,20 @@ Tracks progress against `Docs/Implementation-Plan.md`. Add a dated entry every t
 ---
 
 ## Log
+
+### 2026-07-02 (7) — Phase 1 complete: Remember (document import → structured memory)
+- Started from a clean slate — confirmed via direct file inspection (not assumption) that no upload UI, patient/document data model, Gemini SDK, or `improve()/forget()/memify()` wrappers existed yet; only `cogneeHealth()/cogneeRemember()/cogneeRecall()` (plain-text only) from Phase 0.
+- **Patient scope (explicit decision, user-confirmed):** single hardcoded demo patient, `Rina Kapoor` (`src/lib/patient.ts`), Cognee dataset `patient_demo_patient_1`. Matches PRD §13's single-patient demo flow; a patient list/switcher is out of scope until Phase 5 if ever needed.
+- **File storage decision (proceeded on best judgment, user was AFK when asked):** added `@vercel/blob` (`src/lib/storage.ts`) to persist original uploaded files for Phase 5's Documents view; upload route degrades gracefully (logs and continues) if Blob isn't configured, since the memory pipeline doesn't depend on it.
+  - **Resolved 2026-07-02:** user linked `anamnesis-documents` to the Vercel project via the dashboard and added `BLOB_READ_WRITE_TOKEN` to `.env.local`. Deleted the two orphaned empty stores (`anamnesis-documents-2`, `-3`) via `vercel blob delete-store` (needed the confirmation prompt piped, since `--yes`/`--rw-token` aren't valid flags on this CLI version). Smoke-tested `put()`/`del()` directly against the linked store with the real token (stripping the surrounding quotes `.env.local` uses, which Next.js parses natively but a raw manual script doesn't) — confirmed the upload lands in the correct store (`hikce9skg98aohok` blob-storage subdomain matches `store_hikcE9SkG98aohoK`) and cleaned the test file up afterward. File storage is now fully wired for both local dev and Vercel.
+- **Gemini vision extraction** (`src/lib/gemini.ts`): added `@google/genai`, `extractEntitiesFromDocument()` sends the uploaded file (inline base64) + a document-type hint to `gemini-2.5-flash` with a JSON response schema (diagnoses/medications/labValues/documentDate/summary) — structured output, not free-text parsing.
+- **Narrative builder** (`src/lib/narrative.ts`): turns extracted entities into flowing clinical sentences (not a bullet dump) before handing to Cognee — cognify's NLP pipeline builds the Patient→Condition→Medication→LabValue→Date graph from natural language, so sentence structure matters more than a structured payload would.
+- **`POST /api/documents/upload`**: file → Gemini extraction → Blob storage (best-effort) → `buildNarrative()` → `cogneeRemember(narrative, patient.datasetName)` → returns entities + narrative + Cognee response to the client.
+- **Synthetic patient history** (`src/lib/seed-data.ts`, `POST /api/documents/seed`): 10 documents spanning 2023-08 to 2026-06, telling the exact PRD §13 storyline — hypertension diagnosed → medicated (amlodipine) → kidney function gradually declines (creatinine 0.9→1.9, eGFR 92→39) → losartan added then discontinued after a hyperkalemia hospitalization → CKD Stage 3 diagnosed → nephrology referral. Sets up Phase 2's "why is kidney function declining?" recall demo and Phase 4's forget()/discontinue flows with real history already in the graph.
+- **Upload UI** (`src/app/remember/page.tsx`): document-type selector + file input, "seed patient history" button, extracted-entity cards, and a visible mono-styled Cognee operations log (same pattern as `/debug`, styled with the real design system this time — `.card`/`.mono`/`.eyebrow` tokens, not default Tailwind).
+- **Verified against the real deployed Cognee instance** (not simulated): wrote a standalone script exercising the exact narrative text `buildNarrative()` would produce for one seed document, called the live `/api/v1/remember` endpoint (200, `items_processed: 1`), then called `/api/v1/recall` with a question about that document and got back a correct answer with `"source":"graph"` — confirms the narrative-driven pipeline actually produces a working, graph-grounded memory, not just a 200 response. Cleaned up the test dataset via `/api/v1/forget` afterward (also incidentally the first real exercise of the `forget()` endpoint, ahead of Phase 4).
+- `npm run build` and `npm run lint` both pass; no new lint errors introduced (pre-existing `/debug` lint warning untouched, unrelated to this work).
+- **Not yet done / explicit follow-ups for whoever picks this up next:** (1) link a Vercel Blob store per the gap above; (2) `/remember` hasn't been click-tested in a real signed-in browser session (Clerk protects it, so only the underlying API pipeline was verified directly) — worth a manual pass before the demo; (3) no automated tests were added (matches project convention so far — Phase 0 also relied on live verification, not test suites).
 
 ### 2026-07-02 (6) — Marketing landing page (presentation asset)
 - Built a world-class public landing page at `/` (previously the Cognee connectivity-check UI, now moved to `/debug`). This is a **submission/presentation asset** in service of Phase 6 (judges land here first), not a new product feature — kept deliberately separate from the Phase 1–5 app surfaces so it doesn't pull scope forward.

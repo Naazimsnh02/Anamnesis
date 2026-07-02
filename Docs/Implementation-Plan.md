@@ -29,13 +29,13 @@ Exit criteria: a hello-world API route on Vercel can call the deployed Cognee in
 
 Goal: upload a medical document and see it become structured, connected memory.
 
-- [ ] Upload UI (PDF / image) for: blood report, prescription, discharge summary
-- [ ] Gemini vision extraction: pull structured medical entities (diagnosis, medication, lab value, date) from uploaded file
-- [ ] Map extracted entities into Cognee `remember()` calls, building the per-patient graph (Patient → Condition → Medication → Lab Value → Date, per PRD §8)
-- [ ] Persist a visible "Cognee operations log" (what got remembered, when) — required for judging visibility into Cognee usage
-- [ ] Seed 2–3 years of synthetic patient history (multiple documents) for demo continuity
+- [x] Upload UI (PDF / image) for: blood report, prescription, discharge summary — `src/app/remember/page.tsx`
+- [x] Gemini vision extraction: pull structured medical entities (diagnosis, medication, lab value, date) from uploaded file — `src/lib/gemini.ts`
+- [x] Map extracted entities into Cognee `remember()` calls, building the per-patient graph (Patient → Condition → Medication → Lab Value → Date, per PRD §8) — `src/lib/narrative.ts` + `POST /api/documents/upload`
+- [x] Persist a visible "Cognee operations log" (what got remembered, when) — required for judging visibility into Cognee usage — client-side log panel on `/remember`, same pattern as `/debug`
+- [x] Seed 2–3 years of synthetic patient history (multiple documents) for demo continuity — `src/lib/seed-data.ts` (10 documents, 2023–2026) + `POST /api/documents/seed`
 
-Exit criteria: uploading a document visibly grows the patient's memory graph; operations log shows the `remember()` calls.
+Exit criteria: uploading a document visibly grows the patient's memory graph; operations log shows the `remember()` calls. **Met** — verified the narrative→remember()→recall() path against the real deployed Cognee instance.
 
 ---
 
