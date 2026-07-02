@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 type LogEntry = {
@@ -51,9 +52,9 @@ export default function DebugPage() {
     <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black">
       <main className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16">
         <div>
-          <a href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
+          <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
             ← Back to site
-          </a>
+          </Link>
           <h1 className="mt-3 text-2xl font-semibold text-black dark:text-zinc-50">
             Anamnesis — Cognee connectivity check
           </h1>

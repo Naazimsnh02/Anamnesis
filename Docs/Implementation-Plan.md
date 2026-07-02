@@ -1,9 +1,10 @@
 # Anamnesis — Phase-Wise Implementation Plan
 
-Hackathon: "The Hangover Part AI: Where's My Context?" (June 29 – July 5, 2026)
-Target track: Best Use of Open Source (self-hosted Cognee)
+Originated as a hackathon build: "The Hangover Part AI: Where's My Context?" (June 29 – July 5, 2026), Best Use of Open Source track (self-hosted Cognee).
 
-Scope for this plan = PRD §12 (Hackathon MVP) + §13 (Demo Flow) only. Anything in PRD §7.6–7.9, §10 (full dashboard), §15 is explicitly out of scope until after the hackathon.
+**As of 2026-07-02, the target changed from "hackathon submission" to "real, launchable product."** Phases 0–4 below are the hackathon MVP (PRD §12 + §13) and are complete — that scope note is preserved as history. Phases 5–8 are the production build-out and supersede the old Phase 5/6 (Dashboard Assembly / Demo Polish); see the note at the start of Phase 5.
+
+PRD §7.6–7.9 (lab trends, full medication history, relationship explorer, visit prep), §10's full dashboard beyond what's in Phases 5–8, and §15 (FHIR/EHR, wearables, population health, etc.) remain explicitly out of scope — see "Explicitly Deferred" at the bottom. Production-grade engineering (multi-tenancy, compliance posture, reliability, tests) is the priority over additional feature surface.
 
 ---
 
@@ -80,41 +81,72 @@ Exit criteria: marking something ruled-out/discontinued immediately changes the 
 
 ---
 
-## Phase 5 — Dashboard Assembly (MVP Surface Only)
+## Phase 5 — Multi-Tenant Foundation
 
-Goal: assemble Phases 1–4 into the coherent demo surface from PRD §10, MVP-scoped only.
+**Supersedes the original "Dashboard Assembly" phase** (2026-07-02 scope change: production target, not hackathon demo surface). Goal: replace the single hardcoded demo patient with a real clinic/clinician/patient model, so the app can hold more than one patient without every route being rewritten later.
 
-- [ ] Patient Overview (active conditions, current meds, allergies, last visit) — derived from live memory state, not hardcoded
-- [ ] Timeline view (chronological events from the graph)
-- [ ] Memory Graph view (interactive, from Phase 3's live-update work)
-- [ ] Documents view (original files + extracted entities side by side)
-- [ ] AI Assistant view (from Phase 2)
-- [ ] Cognee operations log surfaced somewhere visible (sidebar or dedicated panel) — this is the "prove we used Cognee deeply" surface for judges
+- [ ] Provision a Vercel-reachable Postgres (Vercel Postgres/Neon) for app/tenancy state — **confirm with user before provisioning** (billing/infra action). Distinct from Cognee's own internal Postgres+pgvector on the GCP VM, which stays private to Cognee.
+- [ ] Schema: `orgs`, `clinicians`, `patients`, `patient_assignments`, `audit_log` — plus roster tables replacing `src/lib/roster.ts`'s Vercel-Blob-JSON pattern (diagnoses/medications with active/ruled-out/discontinued status, document registry for dedup)
+- [ ] Wire Clerk Organizations: an org = a clinic; clinicians belong to one org. `src/proxy.ts` and every route under `src/app/api/**` require an active org and scope all DB/Cognee calls by `orgId`
+- [ ] Patient list/switcher UI; replace `DEMO_PATIENT` (`src/lib/patient.ts`) across `/remember`, `/assistant`, `/summary`, `GraphView` with a patient-scoped selection backed by the new DB
+- [ ] Seed 2–3 synthetic patients under one demo org (single-org-to-start per the confirmed scope decision)
+- [ ] Audit log: every read/write of patient data recorded (who, when, what) — distinct from the Cognee ops log; this is the compliance trail, not a UI feature
 
-Exit criteria: the full demo flow (PRD §13, steps 1–9) can be run start-to-finish without manual data patching.
-
----
-
-## Phase 6 — Demo Polish & Submission
-
-Goal: rehearsed demo, README, and submission artifacts.
-
-- [ ] Rehearse PRD §13 Demo Flow end-to-end, timed
-- [ ] Synthetic patient dataset finalized (3 years of records) — confirm no real PHI anywhere
-- [ ] README: problem, solution, architecture diagram, why self-hosted Cognee (data sovereignty angle), how to run locally
-- [ ] Record backup demo video in case of live-demo failure
-- [ ] Confirm submission meets: demo, README, clear presentation (per hackathon rules)
-- [ ] Optional: prep 1–2 blog-track posts and open-source PRs to Cognee if time remains (side tracks)
-
-Exit criteria: submission-ready repo + README + rehearsed live demo + backup video.
+Exit criteria: a clinician can sign in, see a roster of their org's patients, select one, and every existing Phase 1–4 feature (remember/recall/improve/forget) works against the selected patient instead of a hardcoded one.
 
 ---
 
-## Explicitly Deferred (Post-Hackathon Roadmap)
+## Phase 6 — Reliability & Security Hardening
 
-Not built during the hackathon — tracked here so scope creep is caught early:
+Goal: the app behaves correctly under real (if still synthetic) multi-user, multi-patient conditions — not just the happy path a single demo walkthrough exercises.
+
+- [ ] Test suite: unit tests for `evidence.ts`, `narrative.ts`, and the Phase 5 roster/DB logic; contract tests for API routes against a mocked Cognee client
+- [ ] Error-handling audit across `src/app/api/**` — consistent error responses, and corresponding loading/error/empty UI states on every page
+- [ ] Rate limiting on write routes (upload, status-change)
+- [ ] Observability: error tracking (e.g. Sentry) + structured logs, covering both the Vercel app and the GCP Cognee VM
+- [ ] Backups: automated snapshots for the GCP stack's Postgres+pgvector and Neo4j (currently none)
+- [ ] Push the repo to GitHub (currently local-only) and add CI (lint + build + test on push)
+
+Exit criteria: `npm run build`/`lint`/`test` all clean and enforced in CI; a bad upload or a Cognee timeout produces a handled error state, not a crash.
+
+---
+
+## Phase 7 — Compliance Groundwork
+
+Goal: architecture and documentation only — **not** a green light to use real PHI. Real patient data stays out of scope until every item here is actually true, not just written down (see `CLAUDE.md` "Compliance posture").
+
+- [ ] Document the compliance gap explicitly in the README/roadmap: BAAs needed with Vercel, GCP, Clerk, and Google (Gemini) before any real PHI
+- [ ] Confirm encryption at rest for Postgres/Neo4j/Blob storage; confirm TLS everywhere (Cognee endpoint already covered)
+- [ ] Write the data retention/deletion story end-to-end: what actually happens across Postgres, Cognee's graph/vector stores, and Vercel Blob when a `forget()` call fires or a patient/org is offboarded
+
+Exit criteria: a written, accurate compliance gap analysis exists, and nothing in the codebase implies real-PHI-readiness that isn't actually true yet.
+
+---
+
+## Phase 8 — Product Polish
+
+Goal: the app reads as one coherent product, not four separately-built pages.
+
+- [ ] Unified dashboard shell (persistent nav/sidebar, patient header) wrapping `/remember`, `/assistant`, `/summary`, graph view
+- [ ] Consistent design system usage across all app pages (reuse the landing page's tokens, not default Tailwind)
+- [ ] Global, persistent Cognee operations panel — consolidates the current per-page logs into one place showing remember/recall/improve/forget across the whole session; this is the primary "prove we used Cognee deeply" surface
+- [ ] Onboarding flow: org signup → invite clinicians → add patients (replaces the single seed-button flow)
+- [ ] Mobile pass
+- [ ] README: problem, solution, architecture diagram, why self-hosted Cognee (data sovereignty angle), compliance posture, how to run locally
+- [ ] Rehearse the full demo flow (PRD §13) end-to-end against the new multi-patient surface; record a walkthrough video
+
+Exit criteria: the full demo flow (PRD §13, steps 1–9) runs start-to-finish on the multi-tenant surface without manual data patching, and a new visitor can understand the product from the README alone.
+
+---
+
+## Explicitly Deferred
+
+Not built in Phases 0–8 — tracked here so scope creep is caught early:
 - Laboratory Trends charts (§7.6)
 - Full Medication History detail (§7.7 beyond basic current/discontinued split)
-- Relationship Explorer as a standalone interactive feature beyond the Phase 5 graph view (§7.8)
+- Relationship Explorer as a standalone interactive feature beyond the Phase 3 graph view (§7.8)
 - Visit Preparation auto-briefs (§7.9)
-- Phase 2/3 roadmap items (§15): FHIR/EHR integration, wearables, multi-hospital sync, population health analytics, etc.
+- Patient-facing portal / patient logins (confirmed 2026-07-02: doctor-managed only for now; patients get no read or write access to their own record yet)
+- Multi-org SaaS onboarding beyond the single demo org (confirmed 2026-07-02: single clinic/org to start)
+- Billing/plans (Stripe or otherwise) — not addressed until the above is solid
+- §15 roadmap items: FHIR/EHR integration, wearables, multi-hospital sync, population health analytics, family health memory, clinical trial matching, etc.
