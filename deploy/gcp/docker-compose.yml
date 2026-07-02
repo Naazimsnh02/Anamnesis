@@ -1,0 +1,138 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: anamnesis-caddy
+    restart: always
+    depends_on:
+      - cognee
+    networks:
+      - anamnesis-network
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+  cognee:
+    image: cognee/cognee:1.2.2
+    container_name: anamnesis-cognee
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+    networks:
+      - anamnesis-network
+    env_file:
+      - .env
+    environment:
+      - DEBUG=false
+      - ENV=local
+      - LOG_LEVEL=INFO
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-*}
+      - DB_PROVIDER=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=cognee
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=cognee_db
+      - VECTOR_DB_PROVIDER=pgvector
+      - VECTOR_DB_HOST=postgres
+      - VECTOR_DB_PORT=5432
+      - VECTOR_DB_USERNAME=cognee
+      - VECTOR_DB_PASSWORD=${DB_PASSWORD}
+      - VECTOR_DB_NAME=cognee_db
+      - GRAPH_DATABASE_PROVIDER=neo4j
+      - GRAPH_DATABASE_URL=bolt://neo4j:7687
+      - GRAPH_DATABASE_USERNAME=neo4j
+      - GRAPH_DATABASE_PASSWORD=${NEO4J_PASSWORD}
+      # Single-tenant hackathon demo: no per-user/dataset isolation needed, and
+      # backend access control's supported graph backends (KuzuDB /
+      # neo4j_aura_dev) don't include a plain self-hosted Neo4j container.
+      - ENABLE_BACKEND_ACCESS_CONTROL=false
+      # This instance is internet-reachable (behind Caddy/TLS), unlike the
+      # local dev stack, so application-layer auth is mandatory here.
+      - REQUIRE_AUTHENTICATION=true
+    # No "ports:" — only reachable from other containers on anamnesis-network
+    # (i.e. via Caddy). Do not publish 8000 to the host.
+    volumes:
+      - cognee_data:/app/.cognee_system
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 2.5GB
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: anamnesis-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: cognee
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: cognee_db
+    # No "ports:" — internal network only, never exposed to the host/internet.
+    networks:
+      - anamnesis-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cognee -d cognee_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1GB
+
+  neo4j:
+    image: neo4j:5.26
+    container_name: anamnesis-neo4j
+    restart: always
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
+      - NEO4J_PLUGINS=["apoc", "graph-data-science"]
+      # Keep Neo4j's own memory footprint bounded on a 4GB host shared with
+      # Postgres + Cognee.
+      - NEO4J_server_memory_heap_max__size=768m
+      - NEO4J_server_memory_pagecache_size=256m
+    # No "ports:" — internal network only. To debug via Neo4j Browser, use an
+    # SSH tunnel: gcloud compute ssh anamnesis-cognee-host --tunnel-through-iap
+    #   -- -L 7474:localhost:7474 -L 7687:localhost:7687
+    # (requires temporarily publishing the port on this container, or running
+    # `docker compose exec` tooling instead).
+    networks:
+      - anamnesis-network
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -O /dev/null -q http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1.2GB
+
+networks:
+  anamnesis-network:
+    name: anamnesis-network
+
+volumes:
+  postgres_data:
+  neo4j_data:
+  cognee_data:
+  caddy_data:
+  caddy_config:

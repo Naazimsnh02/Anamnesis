@@ -1,0 +1,7 @@
+# Never ship these to Vercel's build context — secrets and infra config
+# unrelated to the Next.js app itself.
+.env
+.env.local
+deploy/
+docker-compose.yml
+Docs/

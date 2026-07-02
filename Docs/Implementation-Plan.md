@@ -14,11 +14,14 @@ Goal: a running self-hosted Cognee instance reachable from a Next.js app, with a
 - [x] Stand up self-hosted Cognee (Docker) with Postgres + pgvector as vector store and Neo4j as graph backend
 - [x] Verify `remember()` / `recall()` calls work against a trivial test dataset (`memify()`/`forget()` endpoints confirmed present, exercised in later phases)
 - [x] Get Gemini API key (AI Studio free tier) for cognify pipeline + vision OCR
-- [ ] Scaffold Next.js + TypeScript + Tailwind app, deploy skeleton to Vercel
-- [ ] Wire Clerk auth (sign-in, protected routes)
-- [ ] Confirm Vercel serverless functions can reach the self-hosted Cognee instance (networking/CORS/API key)
+- [x] Deploy the stack to a real, internet-reachable host (GCP e2-medium VM, `deploy/gcp/`) behind Caddy/TLS, with `REQUIRE_AUTHENTICATION=true` and an API key minted for the Next.js app — see `deploy/gcp/CREDENTIALS.md`
+- [x] Scaffold Next.js + TypeScript + Tailwind app, deploy skeleton to Vercel
+- [x] Wire Clerk auth (sign-in, protected routes) — all routes protected via `src/proxy.ts` (`clerkMiddleware` + `auth.protect()`), except `/sign-in` and `/sign-up`; verified locally and on production Vercel
+- [x] Confirm Vercel serverless functions can reach the deployed Cognee instance using `COGNEE_API_URL` + `COGNEE_API_KEY` — verified live: `remember()` and `recall()` both called from the production Vercel URL and got correct graph-grounded answers back
 
-Exit criteria: a hello-world API route on Vercel can call self-hosted Cognee's `remember()` and get a response back.
+Exit criteria: a hello-world API route on Vercel can call the deployed Cognee instance's `remember()` and get a response back. **Met** — confirmed live against production.
+
+**Phase 0 is complete.**
 
 ---
 

@@ -1,6 +1,8 @@
 # Secrets
 .env
 .env.local
+deploy/**/.env
+deploy/**/CREDENTIALS.md
 
 # Node / Next.js (added ahead of Phase 0 app scaffold)
 node_modules/
@@ -10,3 +12,5 @@ out/
 # OS
 .DS_Store
 Thumbs.db
+
+.vercel
