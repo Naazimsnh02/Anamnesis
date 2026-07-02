@@ -70,13 +70,13 @@ Exit criteria: same question asked before/after new upload produces a visibly di
 
 Goal: show intelligent forgetting without data loss.
 
-- [ ] Mark a diagnosis as "ruled out" → Cognee `forget()` removes it from active summary, keeps it in historical record
-- [ ] Mark a medication as discontinued → moves to Medication History, out of "Current Medications"
-- [ ] Duplicate document merge (upload a near-duplicate report, show merge instead of duplication)
-- [ ] Patient Summary view updates automatically to reflect forgotten/archived items
-- [ ] Operations log shows `forget()` calls distinctly from `remember()`/`recall()`
+- [x] Mark a diagnosis as "ruled out" → app-level roster status flips (`src/lib/roster.ts`) + a `remember()`/`improve()` correction narrative teaches the graph, since Cognee's real `forget()` is document/dataset-scoped, not entity-scoped (confirmed against the live instance's OpenAPI spec) — removes it from active summary, keeps it in historical record
+- [x] Mark a medication as discontinued → same pattern, moves to Medication History, out of "Current Medications" — `POST /api/documents/status`
+- [x] Duplicate document merge (upload a near-duplicate report, show merge instead of duplication) — literal `forget(dataId)` on the superseded document + `remember()` the new one, `src/app/api/documents/upload/route.ts`
+- [x] Patient Summary view updates automatically to reflect forgotten/archived items — `src/app/summary/page.tsx`, reads `GET /api/documents/roster`
+- [x] Operations log shows `forget()` calls distinctly from `remember()`/`recall()` — `/summary` and `/remember` log panels label `forget()` merges separately
 
-Exit criteria: marking something ruled-out/discontinued immediately changes the active summary while the record remains recoverable in history.
+Exit criteria: marking something ruled-out/discontinued immediately changes the active summary while the record remains recoverable in history. **Met** — verified live against the deployed Cognee instance.
 
 ---
 

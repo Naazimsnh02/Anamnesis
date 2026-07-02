@@ -1,7 +1,8 @@
-import { cogneeImprove, cogneeRemember } from "@/lib/cognee";
+import { cogneeForget, cogneeImprove, cogneeRemember } from "@/lib/cognee";
 import { extractEntitiesFromDocument } from "@/lib/gemini";
 import { buildNarrative } from "@/lib/narrative";
 import { DEMO_PATIENT } from "@/lib/patient";
+import { findDuplicateDocument, getRoster, mergeEntitiesIntoRoster, saveRoster } from "@/lib/roster";
 import { storeOriginalDocument } from "@/lib/storage";
 
 export async function POST(request: Request) {
@@ -32,6 +33,21 @@ export async function POST(request: Request) {
       console.error("storeOriginalDocument failed:", err);
     }
 
+    // Phase 4 "Forget": a document with the same type + date as one already
+    // in the roster is treated as a near-duplicate report — forget() the
+    // old data item so the new one supersedes it instead of the graph
+    // accumulating two copies of the same report.
+    const roster = await getRoster();
+    const duplicate = findDuplicateDocument(roster, entities);
+    let forget: { status: number; body: unknown } | null = null;
+    if (duplicate) {
+      try {
+        forget = await cogneeForget({ dataId: duplicate.dataId, dataset: DEMO_PATIENT.datasetName });
+      } catch (err) {
+        console.error("cogneeForget failed while merging duplicate document:", err);
+      }
+    }
+
     const { status, body } = await cogneeRemember(narrative, DEMO_PATIENT.datasetName);
 
     // Re-run enrichment over the whole dataset so the newly-remembered
@@ -47,6 +63,16 @@ export async function POST(request: Request) {
       }
     }
 
+    let updatedRoster = roster;
+    if (status >= 200 && status < 300) {
+      const items = (body as { items?: { id?: string }[] } | null)?.items;
+      const dataId = items?.[0]?.id;
+      if (dataId) {
+        updatedRoster = mergeEntitiesIntoRoster(roster, entities, dataId, narrative);
+        await saveRoster(updatedRoster);
+      }
+    }
+
     return Response.json(
       {
         entities,
@@ -54,6 +80,9 @@ export async function POST(request: Request) {
         documentUrl,
         cognee: { status, body },
         improve,
+        forget,
+        merged: Boolean(duplicate),
+        roster: updatedRoster,
       },
       { status: status >= 200 && status < 300 ? 200 : status }
     );

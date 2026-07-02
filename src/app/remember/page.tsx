@@ -14,7 +14,7 @@ const DOCUMENT_TYPES = [
 
 type LogEntry = {
   time: string;
-  op: "remember" | "seed" | "improve";
+  op: "remember" | "seed" | "improve" | "forget";
   label: string;
   status: number;
   detail: string;
@@ -26,6 +26,8 @@ type UploadResult = {
   documentUrl: string | null;
   cognee: { status: number; body: unknown };
   improve: { status: number; body: unknown } | null;
+  forget: { status: number; body: unknown } | null;
+  merged: boolean;
 };
 
 function pushLog(setLog: (fn: (prev: LogEntry[]) => LogEntry[]) => void, entry: LogEntry) {
@@ -82,10 +84,19 @@ export default function RememberPage() {
 
       const result = data as UploadResult;
       setResults((prev) => [result, ...prev]);
+      if (result.merged && result.forget) {
+        pushLog(setLog, {
+          time: new Date().toLocaleTimeString(),
+          op: "forget",
+          label: `Duplicate detected (same type + date) — forgot the superseded document`,
+          status: result.forget.status,
+          detail: JSON.stringify(result.forget.body),
+        });
+      }
       pushLog(setLog, {
         time: new Date().toLocaleTimeString(),
         op: "remember",
-        label: `${file.name} (${documentType})`,
+        label: `${file.name} (${documentType})${result.merged ? " — merged over duplicate" : ""}`,
         status: result.cognee.status,
         detail: result.narrative,
       });
@@ -141,9 +152,14 @@ export default function RememberPage() {
             <Link href="/" className="mono text-sm text-[var(--ink-soft)] hover:text-[var(--ink)]">
               ← Back to site
             </Link>
-            <Link href="/assistant" className="mono text-sm text-[var(--ink-soft)] hover:text-[var(--ink)]">
-              Ask the memory →
-            </Link>
+            <div className="flex gap-4">
+              <Link href="/summary" className="mono text-sm text-[var(--ink-soft)] hover:text-[var(--ink)]">
+                Patient summary →
+              </Link>
+              <Link href="/assistant" className="mono text-sm text-[var(--ink-soft)] hover:text-[var(--ink)]">
+                Ask the memory →
+              </Link>
+            </div>
           </div>
           <p className="eyebrow mt-4">remember()</p>
           <h1 className="display d-lg mt-2 text-[var(--ink)]">

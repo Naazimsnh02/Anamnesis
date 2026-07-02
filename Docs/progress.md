@@ -12,13 +12,28 @@ Tracks progress against `Docs/Implementation-Plan.md`. Add a dated entry every t
 | 1 — Remember | **Complete** |
 | 2 — Recall | **Complete** |
 | 3 — Improve | **Complete** |
-| 4 — Forget | Not started |
+| 4 — Forget | **Complete** |
 | 5 — Dashboard Assembly | Not started |
 | 6 — Demo Polish & Submission | Not started |
 
 ---
 
 ## Log
+
+### 2026-07-02 (10) — Phase 4 complete: Forget (correction & archival)
+- Checked current implementation first (not assumed): confirmed `src/lib/cognee.ts` had no `forget()` wrapper, no status/roster tracking, and no Patient Summary view existed yet.
+- **Investigated the real Cognee `forget()` API before designing** (pulled `/openapi.json` from the live deployed instance and read `ForgetPayloadDTO`): it is document/dataset-scoped only — `dataId` (single data item), `dataset`/`datasetId` (whole dataset), or `everything`. There is no entity-level "forget just this one diagnosis" operation. This directly conflicts with a literal reading of the PRD's forget() examples ("mark a diagnosis ruled out", "mark a medication discontinued"), since the source document for a diagnosis often also contains other still-valid facts that a document-level delete would destroy too.
+- **Flagged this to the user before building** (per `CLAUDE.md`'s "design through Cognee, not around it" + "flag deviations before building") and got confirmation to proceed with the recommended approach: track active/ruled-out and current/discontinued status at the app level (doesn't touch the graph destructively), paired with a `remember()`+`improve()` correction narrative so `recall()` itself reflects the change — same pattern as Phase 3's improve() corrections. Reserve literal `forget()` calls for what the API actually supports cleanly: duplicate-document merge and full-document replacement.
+- `src/lib/cognee.ts`: added `cogneeForget({ dataId, dataset, memoryOnly })`.
+- `src/lib/roster.ts` (new): per-patient roster of diagnoses/medications and their status (`active`/`ruled_out`, `current`/`discontinued`), plus a small document registry (`dataId` + type + date) for duplicate detection. Persisted as a JSON blob via the same `@vercel/blob` store already wired for original-document storage (`status/${patient.id}.json`, fixed pathname + `allowOverwrite: true`, read back via `head()` + `fetch()`) — no new infra dependency. `mergeEntitiesIntoRoster()` upserts by name (case-insensitive) and auto-detects already-resolved/discontinued items from Gemini's own extraction (e.g. seed data's Losartan document, whose dosage field is literally "discontinued").
+- **`POST /api/documents/status`** (new): marks a diagnosis ruled-out or medication discontinued — flips the roster status, then `remember()`s a correction narrative ("X's Y diagnosis has been ruled out as of Z...") and `improve()`s the dataset.
+- **`POST /api/documents/upload`**: now checks the roster for a same-type+same-date document before remembering; if found, calls `cogneeForget({ dataId: <old>, dataset })` on the superseded document first (the literal, API-supported forget() use case — duplicate merge), then proceeds with `remember()` as before. Also folds the new document's entities into the roster afterward using the real `dataId` Cognee returns in `remember()`'s response (`items[0].id` — confirmed via a live probe call before wiring this in).
+- **`POST /api/documents/seed`**: now also folds each seed document into the roster, so the Patient Summary has real active diagnoses/medications to act on immediately after seeding.
+- **`GET /api/documents/roster`** (new) + **Patient Summary page** (`src/app/summary/page.tsx`, new): active conditions / current medications with "mark ruled out" / "mark discontinued" actions (optional note field), a history section for archived items (nothing deleted, just moved), and the same mono operations-log panel pattern as `/remember`/`/assistant`, labeling `forget()`-driven merges distinctly from `improve()`-driven corrections.
+- `/remember`'s log now also surfaces a distinct `forget()` entry when an upload triggers a duplicate merge, and both pages cross-link to `/summary`.
+- **Verified against the real deployed Cognee instance end-to-end** (not simulated), via a standalone script mirroring the app's exact logic: (1) remembered a prescription, remembered a same-type-same-date "duplicate" while first `forget()`-ing the original — confirmed via `recall()` afterward that only the corrected dosage exists, not both; (2) remembered a diagnosis then a ruled-out correction narrative, confirmed `recall("Does the patient currently have anemia?")` correctly answered "No... ruled out as of 2026-02-01" citing the graph; (3) confirmed the Vercel Blob roster round-trip (`put`/`head`/`fetch`) works against the real linked store. Cleaned up the test dataset via `forget({ dataset })` and the test blob afterward.
+- `npm run build` passes (all new routes compile, `/summary` prerenders); `npm run lint` has the same single pre-existing `/debug` warning from Phase 1, untouched.
+- **Not yet done:** no interactive browser click-test (no browser-automation tool available in this session, same gap as prior phases) — worth a manual pass on `/summary` before the demo, particularly the mark-ruled-out/discontinued buttons against the seeded patient.
 
 ### 2026-07-02 (9) — Phase 3 complete: Improve (memory enrichment on new data)
 - Checked current implementation first (not assumed): confirmed `src/lib/cognee.ts` had no `improve()`/graph-fetch wrappers yet, and `POST /api/documents/upload` only called `remember()`.
