@@ -101,9 +101,14 @@ export default function RememberPage() {
     <div className="min-h-screen bg-[var(--paper)]">
       <main className="wrap flex max-w-4xl flex-col gap-10 py-16">
         <div>
-          <Link href="/" className="mono text-sm text-[var(--ink-soft)] hover:text-[var(--ink)]">
-            ← Back to site
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link href="/" className="mono text-sm text-[var(--ink-soft)] hover:text-[var(--ink)]">
+              ← Back to site
+            </Link>
+            <Link href="/assistant" className="mono text-sm text-[var(--ink-soft)] hover:text-[var(--ink)]">
+              Ask the memory →
+            </Link>
+          </div>
           <p className="eyebrow mt-4">remember()</p>
           <h1 className="display d-lg mt-2 text-[var(--ink)]">
             Grow <em>Rina Kapoor&apos;s</em> memory

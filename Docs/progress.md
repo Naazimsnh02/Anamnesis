@@ -10,7 +10,7 @@ Tracks progress against `Docs/Implementation-Plan.md`. Add a dated entry every t
 |---|---|
 | 0 — Infra & Environment Setup | **Complete** |
 | 1 — Remember | **Complete** |
-| 2 — Recall | Not started |
+| 2 — Recall | **Complete** |
 | 3 — Improve | Not started |
 | 4 — Forget | Not started |
 | 5 — Dashboard Assembly | Not started |
@@ -19,6 +19,18 @@ Tracks progress against `Docs/Implementation-Plan.md`. Add a dated entry every t
 ---
 
 ## Log
+
+### 2026-07-02 (8) — Phase 2 complete: Recall (smart clinical search)
+- Started by inspecting current implementation directly (not assuming): confirmed `src/lib/cognee.ts`'s `cogneeRecall()` was still the plain-text Phase 0 version (no reference/evidence support), and no `/assistant` UI existed yet.
+- **Investigated the real Cognee response shape before designing anything** — called the live deployed instance's `/api/v1/recall` directly (`deploy/gcp/CREDENTIALS.md` key) against the seeded `patient_demo_patient_1` dataset, and pulled `/openapi.json` to check the actual `RecallPayloadDTO`/`SearchType` schema rather than guessing. Found `includeReferences: true` makes Cognee append a parseable `"\n\nEvidence:\n- chunk N of ... (data_id: ..., chunk_id: ...): \"snippet\""` block to the completion text — real source-chunk citations (document type, date, snippet), not just prose.
+- **Architecture decision (user-confirmed):** the checklist's "Query → recall() → graph traversal → Gemini reasoning → evidence-linked answer" is satisfied by a *single* `recall()` call with `search_type=GRAPH_COMPLETION` — the deployed Cognee instance already runs graph traversal + Gemini reasoning server-side (`LLM_PROVIDER=gemini`, confirmed in Phase 0 log). Chose not to bolt on a second, redundant app-side Gemini call, per `CLAUDE.md`'s "design through Cognee, not around it."
+- `src/lib/cognee.ts`: `cogneeRecall()` now accepts `{ includeReferences, searchType, topK }` options instead of being hardcoded to plain recall.
+- `src/lib/evidence.ts` (new): `parseRecallResponse()`/`parseRecallText()` split Cognee's evidence block back into structured `EvidenceItem[]` (dataId, chunkId, snippet, documentType, documentDate) via regex — validated against two real live responses (a hit and a correct "not mentioned" miss for a diabetes question, since the seed data only has hypertension/CKD) before wiring into the route.
+- `POST /api/cognee/recall` (`src/app/api/cognee/recall/route.ts`): now scopes to `DEMO_PATIENT.datasetName` by default (was hardcoded `"hello_world"`), always requests `includeReferences: true`, returns `{ answer, evidence, source, raw }`.
+- **AI Assistant UI** (`src/app/assistant/page.tsx`): all 8 PRD §9 sample questions as clickable chips + free-text input, chat-style Q&A history, each answer shows a numbered evidence chain (doc type, date, source snippet per chunk) — not just prose — plus a visible Cognee operations log (same mono panel pattern as `/remember`/`/debug`). Added light cross-links between `/remember` and `/assistant`.
+- **Verified against the real deployed Cognee instance** (not simulated): two live `recall()` calls against the actual seeded patient history — "Why is kidney function declining?" correctly cited CKD Stage 3 / declining eGFR with 5 sourced chunks; "When was diabetes first diagnosed?" correctly answered "not mentioned in context" (accurate — seed data has no diabetes diagnosis), confirming the model isn't hallucinating past the graph.
+- `npm run build` passes; `npm run lint` has the same single pre-existing `/debug` warning from Phase 1, untouched.
+- **Not yet done:** no interactive browser click-test was possible (no browser-automation tool available in this session, same gap as Phase 1) — confirmed instead that `/assistant` is correctly Clerk-protected (redirects to sign-in) and that the underlying recall→parse pipeline works against live data. Worth a manual pass before the demo.
 
 ### 2026-07-02 (7) — Phase 1 complete: Remember (document import → structured memory)
 - Started from a clean slate — confirmed via direct file inspection (not assumption) that no upload UI, patient/document data model, Gemini SDK, or `improve()/forget()/memify()` wrappers existed yet; only `cogneeHealth()/cogneeRemember()/cogneeRecall()` (plain-text only) from Phase 0.

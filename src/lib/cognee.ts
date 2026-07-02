@@ -31,12 +31,22 @@ export async function cogneeRemember(text: string, datasetName: string) {
   return { status: res.status, body: await res.json() };
 }
 
-export async function cogneeRecall(query: string, datasetName: string) {
+export async function cogneeRecall(
+  query: string,
+  datasetName: string,
+  options?: { includeReferences?: boolean; searchType?: string; topK?: number }
+) {
   const { url, key } = requireConfig();
   const res = await fetch(`${url}/api/v1/recall`, {
     method: "POST",
     headers: { "X-Api-Key": key, "Content-Type": "application/json" },
-    body: JSON.stringify({ query, datasetName }),
+    body: JSON.stringify({
+      query,
+      datasetName,
+      includeReferences: options?.includeReferences ?? false,
+      ...(options?.searchType ? { searchType: options.searchType } : {}),
+      ...(options?.topK ? { topK: options.topK } : {}),
+    }),
     cache: "no-store",
   });
   return { status: res.status, body: await res.json() };

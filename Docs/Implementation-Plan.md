@@ -43,13 +43,13 @@ Exit criteria: uploading a document visibly grows the patient's memory graph; op
 
 Goal: doctors ask natural-language questions and get graph-grounded answers, not document search.
 
-- [ ] AI Assistant chat UI
-- [ ] Query → Cognee `recall()` → graph traversal → Gemini reasoning → evidence-linked answer
-- [ ] Support PRD §9 sample questions (kidney function decline, first diagnosis date, medication side-effect timeline, etc.)
-- [ ] Response must show the evidence chain (which nodes/edges were traversed), not just prose
-- [ ] Operations log shows `recall()` calls per query
+- [x] AI Assistant chat UI — `src/app/assistant/page.tsx`
+- [x] Query → Cognee `recall()` → graph traversal → Gemini reasoning → evidence-linked answer — single `recall()` call with `search_type=GRAPH_COMPLETION` (Cognee's backend already runs graph traversal + Gemini reasoning internally, confirmed live), `includeReferences: true` — `src/lib/cognee.ts` + `src/app/api/cognee/recall/route.ts`
+- [x] Support PRD §9 sample questions (kidney function decline, first diagnosis date, medication side-effect timeline, etc.) — all 8 rendered as clickable chips
+- [x] Response must show the evidence chain (which nodes/edges were traversed), not just prose — `src/lib/evidence.ts` parses Cognee's evidence citations (doc type, date, source snippet) into structured, numbered evidence chain
+- [x] Operations log shows `recall()` calls per query — same mono log-panel pattern as `/remember`
 
-Exit criteria: asking "Why is kidney function declining?" returns a reasoned, evidence-chain answer sourced from the graph.
+Exit criteria: asking "Why is kidney function declining?" returns a reasoned, evidence-chain answer sourced from the graph. **Met** — verified live against the deployed Cognee instance and the seeded patient history; correctly cites CKD Stage 3 / declining eGFR with 5 sourced document chunks.
 
 ---
 
