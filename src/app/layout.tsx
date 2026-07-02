@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import {
-  ClerkProvider,
-  SignInButton,
-  SignUpButton,
-  Show,
-  UserButton,
-} from "@clerk/nextjs";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,9 +13,42 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument",
+  weight: "400",
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
-  title: "Anamnesis",
-  description: "Every patient's story. Remembered.",
+  metadataBase: new URL("https://anamnesisai.vercel.app"),
+  title: "Anamnesis — Every patient's story. Remembered.",
+  description:
+    "Anamnesis turns fragmented medical records into one living clinical memory — connected, reasoned over, and always current. Built on self-hosted, open-source Cognee, so patient data never leaves your walls.",
+  keywords: [
+    "clinical memory",
+    "medical records",
+    "knowledge graph",
+    "Cognee",
+    "healthcare AI",
+    "patient history",
+  ],
+  openGraph: {
+    title: "Anamnesis — Every patient's story. Remembered.",
+    description:
+      "A persistent clinical memory that remembers, recalls, improves and forgets. Built on self-hosted, open-source Cognee.",
+    url: "https://anamnesisai.vercel.app",
+    siteName: "Anamnesis",
+    images: [{ url: "/generated/hero.png", width: 1408, height: 792 }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Anamnesis — Every patient's story. Remembered.",
+    description:
+      "A persistent clinical memory built on self-hosted, open-source Cognee.",
+    images: ["/generated/hero.png"],
+  },
 };
 
 export default function RootLayout({
@@ -33,23 +60,9 @@ export default function RootLayout({
     <ClerkProvider>
       <html
         lang="en"
-        className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
       >
-        <body className="min-h-full flex flex-col">
-          <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-3 dark:border-zinc-800">
-            <span className="text-sm font-semibold">Anamnesis</span>
-            <Show when="signed-out">
-              <div className="flex gap-3">
-                <SignInButton />
-                <SignUpButton />
-              </div>
-            </Show>
-            <Show when="signed-in">
-              <UserButton />
-            </Show>
-          </header>
-          <div className="flex flex-1 flex-col">{children}</div>
-        </body>
+        <body className="min-h-full">{children}</body>
       </html>
     </ClerkProvider>
   );

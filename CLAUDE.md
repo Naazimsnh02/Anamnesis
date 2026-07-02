@@ -6,7 +6,7 @@ Full product spec: `Docs/Anamnesis-PRD.md`
 Build plan: `Docs/Implementation-Plan.md`
 Progress log: `Docs/progress.md` — update this after finishing any checklist item from the Implementation Plan.
 
-**Status: Phase 0 (infra/deploy/auth) is complete.** Live app: `https://anamnesis-sigma.vercel.app`. Next up is Phase 1 (Remember: document upload UI) — see `Docs/Implementation-Plan.md`.
+**Status: Phase 0 (infra/deploy/auth) is complete.** Live app: `https://anamnesisai.vercel.app`. Next up is Phase 1 (Remember: document upload UI) — see `Docs/Implementation-Plan.md`.
 
 ## What this is
 
@@ -32,7 +32,7 @@ A real, internet-reachable Cognee instance is already running — this is not lo
 
 ## Deployed Next.js app
 
-Live at `https://anamnesis-sigma.vercel.app` (Vercel project `anamnesis`, not yet connected to a Git repo — deploys happen via `vercel deploy --prod` from this machine, not git push). Route handlers under `src/app/api/cognee/` proxy to the deployed Cognee instance server-side, so `COGNEE_API_KEY` never reaches the browser.
+Live at `https://anamnesisai.vercel.app` (Vercel project `anamnesis`, not yet connected to a Git repo — deploys happen via `vercel deploy --prod` from this machine, not git push). Route handlers under `src/app/api/cognee/` proxy to the deployed Cognee instance server-side, so `COGNEE_API_KEY` never reaches the browser.
 
 ## Auth (Clerk)
 

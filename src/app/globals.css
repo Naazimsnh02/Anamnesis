@@ -1,26 +1,274 @@
 @import "tailwindcss";
 
+/* ============================================================================
+   Anamnesis — design system
+   Warm ember inside cool ink. Editorial, clinical, quietly luminous.
+   ========================================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* palette */
+  --paper: #f2f4f3; /* cool porcelain */
+  --paper-2: #eaeeec; /* recessed panels */
+  --ink: #0f1619; /* deep slate-teal, near black */
+  --ink-2: #16211f; /* raised dark surface */
+  --ink-soft: #55666b; /* secondary text on paper */
+  --ink-faint: #8a9a9c; /* tertiary / captions */
+  --line: #d7dddb; /* hairlines on paper */
+  --line-dark: #26332f; /* hairlines on ink */
+  --pen: #1e3a5f; /* heritage ink-blue — primary accent */
+  --pen-2: #6e9bc9; /* lighter pen for dark bg */
+  --ember: #d98a3d; /* the single warm memory-spark */
+  --ember-soft: #e7b483;
+
+  --paper-on-ink: #eef2f0; /* text on dark surfaces */
+
+  /* type */
+  --font-display: var(--font-instrument), Georgia, serif;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --shadow-card: 0 1px 2px rgba(15, 22, 25, 0.04),
+    0 12px 32px -12px rgba(15, 22, 25, 0.12);
+  --shadow-lift: 0 2px 4px rgba(15, 22, 25, 0.05),
+    0 28px 60px -20px rgba(15, 22, 25, 0.22);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-pen: var(--pen);
+  --color-ember: var(--ember);
+  --color-line: var(--line);
+  --font-display: var(--font-instrument);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--line);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv01";
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--pen);
+  color: var(--paper);
+}
+
+/* --- typography ----------------------------------------------------------- */
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 0.98;
+}
+.display em {
+  font-style: italic;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--pen);
+  font-weight: 500;
+}
+.eyebrow.on-ink {
+  color: var(--pen-2);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.lede {
+  font-size: clamp(1.05rem, 1.5vw, 1.3rem);
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* fluid display scale */
+.d-hero {
+  font-size: clamp(3rem, 9vw, 7.5rem);
+}
+.d-xl {
+  font-size: clamp(2.4rem, 5.5vw, 4.5rem);
+}
+.d-lg {
+  font-size: clamp(1.9rem, 3.6vw, 3rem);
+}
+
+/* --- structure ------------------------------------------------------------ */
+
+.section {
+  position: relative;
+  padding-block: clamp(5rem, 11vw, 9rem);
+}
+.wrap {
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 4vw, 2rem);
+}
+.hair {
+  height: 1px;
+  background: var(--line);
+  border: 0;
+}
+
+/* the left "spine" — record binding / continuous thread */
+.spine {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: clamp(1.25rem, 4vw, 2rem);
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--line) 12%,
+    var(--line) 88%,
+    transparent
+  );
+  z-index: 40;
+  pointer-events: none;
+}
+@media (max-width: 900px) {
+  .spine {
+    display: none;
+  }
+}
+
+/* dark surface */
+.ink-surface {
+  background: var(--ink);
+  color: var(--paper-on-ink);
+}
+.ink-surface .lede {
+  color: #a9bab6;
+}
+.ink-surface .hair {
+  background: var(--line-dark);
+}
+
+/* --- buttons -------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.72rem 1.35rem;
+  border-radius: 999px;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background 0.25s, color 0.25s, box-shadow 0.25s, border-color 0.25s;
+  cursor: pointer;
+  border: 1px solid transparent;
+  will-change: transform;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+.btn-primary:hover {
+  background: var(--pen);
+  box-shadow: 0 12px 28px -12px rgba(30, 58, 95, 0.6);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+}
+.btn-ghost:hover {
+  border-color: var(--ink);
+  transform: translateY(-1px);
+}
+.on-ink .btn-ghost,
+.ink-surface .btn-ghost {
+  color: var(--paper-on-ink);
+  border-color: var(--line-dark);
+}
+.on-ink .btn-ghost:hover,
+.ink-surface .btn-ghost:hover {
+  border-color: var(--pen-2);
+}
+.on-ink .btn-primary,
+.ink-surface .btn-primary {
+  background: var(--paper);
+  color: var(--ink);
+}
+.on-ink .btn-primary:hover,
+.ink-surface .btn-primary:hover {
+  background: var(--ember);
+  color: var(--ink);
+  box-shadow: 0 14px 30px -12px rgba(217, 138, 61, 0.55);
+}
+
+/* --- cards ---------------------------------------------------------------- */
+
+.card {
+  position: relative;
+  background: color-mix(in srgb, var(--paper) 60%, white);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.4s, border-color 0.4s;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+  border-color: color-mix(in srgb, var(--pen) 35%, var(--line));
+}
+
+/* --- misc ----------------------------------------------------------------- */
+
+.tick {
+  color: var(--ember);
+}
+
+/* thread that draws in on view */
+.draw path,
+.draw line,
+.draw circle {
+  vector-effect: non-scaling-stroke;
+}
+
+/* accessibility */
+:focus-visible {
+  outline: 2px solid var(--pen);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
