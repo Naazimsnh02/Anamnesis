@@ -1,0 +1,12 @@
+# Secrets
+.env
+.env.local
+
+# Node / Next.js (added ahead of Phase 0 app scaffold)
+node_modules/
+.next/
+out/
+
+# OS
+.DS_Store
+Thumbs.db
