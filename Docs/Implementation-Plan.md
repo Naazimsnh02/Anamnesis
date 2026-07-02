@@ -57,12 +57,12 @@ Exit criteria: asking "Why is kidney function declining?" returns a reasoned, ev
 
 Goal: uploading a new report visibly enriches prior diagnoses/relationships, and the graph updates live.
 
-- [ ] Upload a new document mid-demo (e.g., nephrologist report)
-- [ ] Trigger Cognee `improve()`/`memify()` to link new entities to existing history (PRD §8 Improve examples: early glucose → later diabetes diagnosis; medication → side effect timeline)
-- [ ] Live graph view that visibly updates after ingestion (even a simple force-directed graph re-render is enough for demo)
-- [ ] Re-ask the same recall question from Phase 2 and show a richer answer
+- [x] Upload a new document mid-demo (e.g., nephrologist report) — existing `/remember` upload flow, exercised live with a follow-up nephrology note
+- [x] Trigger Cognee `improve()`/`memify()` to link new entities to existing history — `cogneeImprove()` in `src/lib/cognee.ts`, called automatically after every `remember()` in `POST /api/documents/upload`
+- [x] Live graph view that visibly updates after ingestion — `src/components/GraphView.tsx` (d3-force layout, SVG), embedded on `/remember`, refetches after every upload/seed
+- [x] Re-ask the same recall question from Phase 2 and show a richer answer — verified live (see below)
 
-Exit criteria: same question asked before/after new upload produces a visibly different, richer answer — this is the demo's core "wow" moment.
+Exit criteria: same question asked before/after new upload produces a visibly different, richer answer — this is the demo's core "wow" moment. **Met** — verified live against the deployed instance.
 
 ---
 

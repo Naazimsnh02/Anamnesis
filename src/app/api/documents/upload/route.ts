@@ -1,4 +1,4 @@
-import { cogneeRemember } from "@/lib/cognee";
+import { cogneeImprove, cogneeRemember } from "@/lib/cognee";
 import { extractEntitiesFromDocument } from "@/lib/gemini";
 import { buildNarrative } from "@/lib/narrative";
 import { DEMO_PATIENT } from "@/lib/patient";
@@ -34,12 +34,26 @@ export async function POST(request: Request) {
 
     const { status, body } = await cogneeRemember(narrative, DEMO_PATIENT.datasetName);
 
+    // Re-run enrichment over the whole dataset so the newly-remembered
+    // entities get linked into prior history (Phase 3 "Improve"), not just
+    // appended alongside it. Best-effort: a failed enrichment pass shouldn't
+    // fail the upload, since the memory itself was already committed above.
+    let improve: { status: number; body: unknown } | null = null;
+    if (status >= 200 && status < 300) {
+      try {
+        improve = await cogneeImprove(DEMO_PATIENT.datasetName);
+      } catch (err) {
+        console.error("cogneeImprove failed after upload:", err);
+      }
+    }
+
     return Response.json(
       {
         entities,
         narrative,
         documentUrl,
         cognee: { status, body },
+        improve,
       },
       { status: status >= 200 && status < 300 ? 200 : status }
     );

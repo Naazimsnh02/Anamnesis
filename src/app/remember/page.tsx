@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ExtractedEntities } from "@/lib/gemini";
+import { GraphView, type GraphEdge, type GraphNode } from "@/components/GraphView";
 
 const DOCUMENT_TYPES = [
   { value: "blood_report", label: "Blood report" },
@@ -13,7 +14,7 @@ const DOCUMENT_TYPES = [
 
 type LogEntry = {
   time: string;
-  op: "remember" | "seed";
+  op: "remember" | "seed" | "improve";
   label: string;
   status: number;
   detail: string;
@@ -24,6 +25,7 @@ type UploadResult = {
   narrative: string;
   documentUrl: string | null;
   cognee: { status: number; body: unknown };
+  improve: { status: number; body: unknown } | null;
 };
 
 function pushLog(setLog: (fn: (prev: LogEntry[]) => LogEntry[]) => void, entry: LogEntry) {
@@ -39,6 +41,28 @@ export default function RememberPage() {
   const [log, setLog] = useState<LogEntry[]>([]);
   const [results, setResults] = useState<UploadResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
+  const [graphEdges, setGraphEdges] = useState<GraphEdge[]>([]);
+  const [graphLoading, setGraphLoading] = useState(false);
+
+  async function fetchGraph() {
+    setGraphLoading(true);
+    try {
+      const res = await fetch("/api/cognee/graph");
+      const data = await res.json();
+      if (res.ok) {
+        setGraphNodes(data.nodes ?? []);
+        setGraphEdges(data.edges ?? []);
+      }
+    } finally {
+      setGraphLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- standard fetch-on-mount to load the current graph
+    fetchGraph();
+  }, []);
 
   async function handleUpload() {
     if (!file) return;
@@ -56,15 +80,26 @@ export default function RememberPage() {
         throw new Error(data.error || `Upload failed (HTTP ${res.status})`);
       }
 
-      setResults((prev) => [data as UploadResult, ...prev]);
+      const result = data as UploadResult;
+      setResults((prev) => [result, ...prev]);
       pushLog(setLog, {
         time: new Date().toLocaleTimeString(),
         op: "remember",
         label: `${file.name} (${documentType})`,
-        status: data.cognee.status,
-        detail: data.narrative,
+        status: result.cognee.status,
+        detail: result.narrative,
       });
+      if (result.improve) {
+        pushLog(setLog, {
+          time: new Date().toLocaleTimeString(),
+          op: "improve",
+          label: "Re-enriched dataset, linking new entities into prior history",
+          status: result.improve.status,
+          detail: JSON.stringify(result.improve.body),
+        });
+      }
       setFile(null);
+      await fetchGraph();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -90,6 +125,7 @@ export default function RememberPage() {
           .map((r) => `${r.documentDate ?? "?"} · ${r.documentType}`)
           .join(" — "),
       });
+      await fetchGraph();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -206,6 +242,28 @@ export default function RememberPage() {
             ))}
           </section>
         )}
+
+        <section className="card p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="mono text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
+              Memory graph — {graphNodes.length} entities, {graphEdges.length} relationships
+            </h2>
+            <button
+              onClick={fetchGraph}
+              disabled={graphLoading}
+              className="mono text-xs text-[var(--pen)] underline disabled:opacity-50"
+            >
+              {graphLoading ? "refreshing…" : "refresh"}
+            </button>
+          </div>
+          <p className="mt-1 text-sm text-[var(--ink-soft)]">
+            Live view of the patient&apos;s Cognee knowledge graph. Grows every time a document is
+            remembered and improve() links it into prior history.
+          </p>
+          <div className="mt-4">
+            <GraphView nodes={graphNodes} edges={graphEdges} />
+          </div>
+        </section>
 
         <section>
           <h2 className="mono mb-3 text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">

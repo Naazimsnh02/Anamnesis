@@ -11,7 +11,7 @@ Tracks progress against `Docs/Implementation-Plan.md`. Add a dated entry every t
 | 0 — Infra & Environment Setup | **Complete** |
 | 1 — Remember | **Complete** |
 | 2 — Recall | **Complete** |
-| 3 — Improve | Not started |
+| 3 — Improve | **Complete** |
 | 4 — Forget | Not started |
 | 5 — Dashboard Assembly | Not started |
 | 6 — Demo Polish & Submission | Not started |
@@ -19,6 +19,18 @@ Tracks progress against `Docs/Implementation-Plan.md`. Add a dated entry every t
 ---
 
 ## Log
+
+### 2026-07-02 (9) — Phase 3 complete: Improve (memory enrichment on new data)
+- Checked current implementation first (not assumed): confirmed `src/lib/cognee.ts` had no `improve()`/graph-fetch wrappers yet, and `POST /api/documents/upload` only called `remember()`.
+- **Investigated the real Cognee graph/improve API before designing** (same approach as Phase 2): pulled `/openapi.json` from the live deployed instance, found `GET /api/v1/datasets/{id}/graph` (structured `{nodes, edges}`, no HTML parsing needed) and confirmed `POST /api/v1/improve` re-runs enrichment over an existing graph when no `data` is passed (exactly the PRD §8 "link new entities to existing history" behavior). Pulled the live graph for the seeded demo patient (70 nodes / 172 edges) and inspected real node/edge shapes and types (`Entity`, `EntityType`, `TextDocument`, `DocumentChunk`, `TextSummary`) before writing any filtering logic.
+- `src/lib/cognee.ts`: added `cogneeImprove()`, `cogneeListDatasets()`, `cogneeGetGraph()`.
+- `src/lib/graph.ts` (new): `toClinicalGraph()` filters Cognee's raw dataset graph down to `Entity`/`EntityType` nodes — drops the `TextDocument`/`DocumentChunk`/`TextSummary` ingestion-plumbing nodes so the demo graph reads as the PRD's Patient→Condition→Medication→LabValue relationship graph, not a document-pipeline diagram.
+- `POST /api/documents/upload` (`src/app/api/documents/upload/route.ts`): after a successful `remember()`, now calls `cogneeImprove()` over the whole dataset (best-effort — a failed enrichment pass doesn't fail the upload, since the memory itself is already committed). New `POST /api/cognee/improve` and `GET /api/cognee/graph` routes added for operations-log visibility and the graph view.
+- **Live graph view** (`src/components/GraphView.tsx`): SVG + `d3-force` (new dependency) force-directed layout, computed via `useMemo` (fixed 200-tick synchronous simulation, not an animation loop) rather than effect+setState — required to satisfy the new `react-hooks/set-state-in-effect` lint rule shipped with this Next.js 16 / eslint-config-next version; also hit the same rule on the fetch-on-mount graph load in `/remember` and resolved it with an explicit inline disable (standard fetch-on-mount pattern, not a bug). Embedded on `/remember`, refetches automatically after every upload and after seeding.
+- **Verified against the real deployed Cognee instance end-to-end** (not simulated): captured the live graph for `patient_demo_patient_1` (70 nodes/172 edges), `remember()`'d a synthetic follow-up nephrology note (CKD Stage 4 progression) via direct API call mimicking the upload route exactly, called `improve()`, re-fetched the graph (78 nodes/189 edges — visible growth), then re-asked Phase 2's exact question ("Why is kidney function declining?") via `recall()` and confirmed the answer changed to include the new creatinine trend data (rising to 2.1 mg/dL) that wasn't in the original answer — the demo's core "wow" moment, confirmed working live. **Cleaned up the test document afterward** via `forget()` (`dataId`-scoped), confirmed the graph returned to exactly 70 nodes/172 edges — the seeded demo storyline is untouched.
+- Noted but not fixed (out of my control): Cognee's own `GRAPH_COMPLETION` synthesis occasionally over-generalizes — the post-improve answer mentioned "diabetes" once, which isn't in this patient's seed data (only hypertension/CKD). This is the deployed Gemini-backed completion's reasoning, not a bug in the app's parsing/wrapper code; worth keeping an eye on for the live demo but not something `src/lib/evidence.ts` should "fix" (would mean editing the model's actual answer).
+- `npm run build`/`lint` clean (same single pre-existing `/debug` warning, untouched).
+- **Not yet done:** no interactive browser click-test (no browser-automation tool available in this session — same gap as Phases 1–2); confirmed instead via SSR/RSC render checks (both `/remember` and `/assistant` return 200 through the Clerk sign-in redirect with no server errors, confirming the new `GraphView` import compiles and renders) and live API verification of the full pipeline. Worth a manual pass before the demo.
 
 ### 2026-07-02 (8) — Phase 2 complete: Recall (smart clinical search)
 - Started by inspecting current implementation directly (not assuming): confirmed `src/lib/cognee.ts`'s `cogneeRecall()` was still the plain-text Phase 0 version (no reference/evidence support), and no `/assistant` UI existed yet.

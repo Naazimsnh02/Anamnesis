@@ -51,3 +51,36 @@ export async function cogneeRecall(
   });
   return { status: res.status, body: await res.json() };
 }
+
+// Re-runs Cognee's enrichment pipeline over the dataset's existing graph (no
+// new data passed in) so newly-remembered entities get linked into prior
+// history — e.g. an early lab value entity linked forward to a later
+// diagnosis entity (PRD §8 Improve examples).
+export async function cogneeImprove(datasetName: string) {
+  const { url, key } = requireConfig();
+  const res = await fetch(`${url}/api/v1/improve`, {
+    method: "POST",
+    headers: { "X-Api-Key": key, "Content-Type": "application/json" },
+    body: JSON.stringify({ datasetName }),
+    cache: "no-store",
+  });
+  return { status: res.status, body: await res.json() };
+}
+
+export async function cogneeListDatasets() {
+  const { url, key } = requireConfig();
+  const res = await fetch(`${url}/api/v1/datasets`, {
+    headers: { "X-Api-Key": key },
+    cache: "no-store",
+  });
+  return { status: res.status, body: await res.json() };
+}
+
+export async function cogneeGetGraph(datasetId: string) {
+  const { url, key } = requireConfig();
+  const res = await fetch(`${url}/api/v1/datasets/${datasetId}/graph`, {
+    headers: { "X-Api-Key": key },
+    cache: "no-store",
+  });
+  return { status: res.status, body: await res.json() };
+}
