@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { DEMO_PATIENT } from "@/lib/patient";
+import { useActivePatient } from "@/lib/useActivePatient";
 
 const SAMPLE_QUESTIONS = [
   "Why is kidney function declining?",
@@ -40,6 +40,7 @@ type LogEntry = {
 };
 
 export default function AssistantPage() {
+  const { activePatient } = useActivePatient();
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -54,7 +55,7 @@ export default function AssistantPage() {
       const res = await fetch("/api/cognee/recall", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: trimmed, datasetName: DEMO_PATIENT.datasetName }),
+        body: JSON.stringify({ query: trimmed }),
       });
       const data = await res.json();
 
@@ -105,7 +106,7 @@ export default function AssistantPage() {
           </div>
           <p className="eyebrow mt-4">recall()</p>
           <h1 className="display d-lg mt-2 text-[var(--ink)]">
-            Ask <em>{DEMO_PATIENT.name}&apos;s</em> memory
+            Ask <em>{activePatient?.name ?? "your patient"}&apos;s</em> memory
           </h1>
           <p className="lede mt-3 max-w-xl">
             Every question runs through Cognee&apos;s <span className="mono">recall()</span> —

@@ -1,0 +1,66 @@
+import { cogneeRemember } from "@/lib/cognee";
+import { buildNarrative } from "@/lib/narrative";
+import { createPatient, listPatientsForOrg, requireOrgContext, setActivePatientCookie } from "@/lib/db/queries";
+import { getRoster, mergeEntitiesIntoRoster, saveRoster } from "@/lib/roster";
+import { SEED_PATIENTS } from "@/lib/seed-data";
+
+// Seeds the Implementation Plan's "2-3 synthetic patients under one demo
+// org" (Phase 5 checklist) — Rina Kapoor's full 3-year CKD storyline plus
+// two lighter patients, so the new patient switcher has real, distinct data
+// to switch between. Idempotent by patient name within the org: re-running
+// this after Rina already exists tops up any of her documents that are
+// still missing rather than creating a duplicate patient.
+export async function POST() {
+  try {
+    const { orgId } = await requireOrgContext();
+    const existing = await listPatientsForOrg(orgId);
+
+    const results: { patient: string; documentType: string; documentDate: string | null; status: number }[] = [];
+    let firstPatientId: string | null = null;
+
+    for (const seedPatient of SEED_PATIENTS) {
+      let patient = existing.find((p) => p.name === seedPatient.name);
+      if (!patient) {
+        patient = await createPatient(orgId, seedPatient.name, seedPatient.dob);
+      }
+      if (!firstPatientId) firstPatientId = patient.id;
+
+      let roster = await getRoster(patient.id);
+      const alreadySeeded = roster.documents.length >= seedPatient.documents.length;
+      if (alreadySeeded) {
+        results.push({ patient: patient.name, documentType: "(skipped, already seeded)", documentDate: null, status: 200 });
+        continue;
+      }
+
+      for (const entities of seedPatient.documents) {
+        const narrative = buildNarrative(patient.name, entities);
+        try {
+          const { status, body } = await cogneeRemember(narrative, patient.datasetName);
+          results.push({ patient: patient.name, documentType: entities.documentType, documentDate: entities.documentDate, status });
+          if (status >= 200 && status < 300) {
+            const items = (body as { items?: { id?: string }[] } | null)?.items;
+            const dataId = items?.[0]?.id;
+            if (dataId) roster = mergeEntitiesIntoRoster(roster, entities, dataId, narrative);
+          }
+        } catch (err) {
+          results.push({ patient: patient.name, documentType: entities.documentType, documentDate: entities.documentDate, status: 500 });
+          console.error(`seed-demo remember() failed for ${patient.name}/${entities.documentType}:`, err);
+        }
+      }
+      await saveRoster(patient.id, roster);
+    }
+
+    if (firstPatientId) await setActivePatientCookie(firstPatientId);
+
+    const failed = results.filter((r) => r.status < 200 || r.status >= 300);
+    return Response.json(
+      { seeded: results.length, failed: failed.length, results },
+      { status: failed.length === results.length && results.length > 0 ? 500 : 200 }
+    );
+  } catch (err) {
+    return Response.json(
+      { error: err instanceof Error ? err.message : "Unknown error" },
+      { status: 500 }
+    );
+  }
+}

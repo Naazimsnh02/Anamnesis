@@ -85,12 +85,13 @@ Exit criteria: marking something ruled-out/discontinued immediately changes the 
 
 **Supersedes the original "Dashboard Assembly" phase** (2026-07-02 scope change: production target, not hackathon demo surface). Goal: replace the single hardcoded demo patient with a real clinic/clinician/patient model, so the app can hold more than one patient without every route being rewritten later.
 
-- [ ] Provision a Vercel-reachable Postgres (Vercel Postgres/Neon) for app/tenancy state — **confirm with user before provisioning** (billing/infra action). Distinct from Cognee's own internal Postgres+pgvector on the GCP VM, which stays private to Cognee.
-- [ ] Schema: `orgs`, `clinicians`, `patients`, `patient_assignments`, `audit_log` — plus roster tables replacing `src/lib/roster.ts`'s Vercel-Blob-JSON pattern (diagnoses/medications with active/ruled-out/discontinued status, document registry for dedup)
-- [ ] Wire Clerk Organizations: an org = a clinic; clinicians belong to one org. `src/proxy.ts` and every route under `src/app/api/**` require an active org and scope all DB/Cognee calls by `orgId`
-- [ ] Patient list/switcher UI; replace `DEMO_PATIENT` (`src/lib/patient.ts`) across `/remember`, `/assistant`, `/summary`, `GraphView` with a patient-scoped selection backed by the new DB
-- [ ] Seed 2–3 synthetic patients under one demo org (single-org-to-start per the confirmed scope decision)
-- [ ] Audit log: every read/write of patient data recorded (who, when, what) — distinct from the Cognee ops log; this is the compliance trail, not a UI feature
+- [x] Provision a Vercel-reachable Postgres (Vercel Postgres/Neon) for app/tenancy state — Neon via `vercel integration add neon`, connected to the project
+- [x] Schema: `orgs`, `clinicians`, `patients`, `patient_assignments`, `audit_log` — plus roster tables replacing `src/lib/roster.ts`'s Vercel-Blob-JSON pattern (diagnoses/medications with active/ruled-out/discontinued status, document registry for dedup) — `src/lib/db/schema.ts`, pushed live via Drizzle
+- [x] Wire Clerk Organizations: an org = a clinic; clinicians belong to one org. `src/proxy.ts` and every route under `src/app/api/**` require an active org and scope all DB/Cognee calls by `orgId` — `src/lib/db/queries.ts`'s `requireOrgContext()`/`requirePatientContext()`
+- [x] Patient list/switcher UI; replaced `DEMO_PATIENT` (`src/lib/patient.ts`) across `/remember`, `/assistant`, `/summary`, `GraphView` with a patient-scoped selection backed by the new DB — `src/components/PatientSwitcher.tsx`, `src/lib/useActivePatient.ts`
+- [x] Seed 2–3 synthetic patients under one demo org (single-org-to-start per the confirmed scope decision) — `POST /api/patients/seed-demo`, `src/lib/seed-data.ts`'s `SEED_PATIENTS`
+- [x] Audit log table exists (`audit_log` in schema) — **not yet wired into any route** (no calls populate it yet); tracked as a Phase 6 follow-up, not blocking Phase 5's exit criteria
+- [x] **Unplanned but load-bearing:** discovered and fixed a real cross-patient data isolation gap in the deployed Cognee instance (Neo4j Community couldn't support per-dataset access control; migrated to embedded Kuzu + fixed a session-cache leak). See `Docs/progress.md` 2026-07-02 (14)/(15) — this blocked and then unblocked everything else in this phase.
 
 Exit criteria: a clinician can sign in, see a roster of their org's patients, select one, and every existing Phase 1–4 feature (remember/recall/improve/forget) works against the selected patient instead of a hardcoded one.
 

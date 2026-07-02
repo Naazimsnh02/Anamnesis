@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
+import { PatientSwitcher } from "@/components/PatientSwitcher";
 
 const NAV = [
   { href: "/remember", label: "Remember" },
@@ -25,6 +26,8 @@ export function AppHeader() {
         </nav>
       </div>
       <div className="flex items-center gap-3">
+        <PatientSwitcher />
+        <div className="h-5 w-px bg-black/10" />
         <OrganizationSwitcher
           hidePersonal
           afterCreateOrganizationUrl="/remember"

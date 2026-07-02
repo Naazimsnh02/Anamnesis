@@ -1,6 +1,5 @@
 import { head, put, BlobNotFoundError } from "@vercel/blob";
 import type { ExtractedEntities } from "@/lib/gemini";
-import { DEMO_PATIENT } from "@/lib/patient";
 
 // Cognee's forget() endpoint only deletes whole documents/datasets, not a
 // single graph entity (confirmed against the live instance's OpenAPI spec:
@@ -12,7 +11,17 @@ import { DEMO_PATIENT } from "@/lib/patient";
 // Summary's "active" vs "historical" split. The corresponding forget() calls
 // are reserved for what the API actually supports: duplicate-document merge
 // and full-document replacement (see src/app/api/documents/upload/route.ts).
-const ROSTER_PATHNAME = `roster/${DEMO_PATIENT.id}.json`;
+//
+// Phase 5 note: this is still the Vercel-Blob-JSON storage mechanism from
+// the hackathon build, just keyed per-patient now instead of one hardcoded
+// patient (necessary so multi-patient scoping is actually correct — each
+// patient needs their own roster, not a shared one). Migrating this storage
+// mechanism itself onto the roster_* Postgres tables (src/lib/db/schema.ts)
+// is a separate, already-scoped task (Implementation Plan Phase 5 checklist:
+// "Migrate roster.ts from Vercel Blob JSON to Postgres").
+function rosterPathname(patientId: string): string {
+  return `roster/${patientId}.json`;
+}
 
 export type RosterDiagnosis = {
   name: string;
@@ -48,9 +57,9 @@ function emptyRoster(): Roster {
   return { diagnoses: [], medications: [] , documents: [] };
 }
 
-export async function getRoster(): Promise<Roster> {
+export async function getRoster(patientId: string): Promise<Roster> {
   try {
-    const info = await head(ROSTER_PATHNAME);
+    const info = await head(rosterPathname(patientId));
     const res = await fetch(info.downloadUrl, { cache: "no-store" });
     if (!res.ok) return emptyRoster();
     return (await res.json()) as Roster;
@@ -60,8 +69,8 @@ export async function getRoster(): Promise<Roster> {
   }
 }
 
-export async function saveRoster(roster: Roster): Promise<void> {
-  await put(ROSTER_PATHNAME, JSON.stringify(roster, null, 2), {
+export async function saveRoster(patientId: string, roster: Roster): Promise<void> {
+  await put(rosterPathname(patientId), JSON.stringify(roster, null, 2), {
     access: "public",
     contentType: "application/json",
     addRandomSuffix: false,

@@ -1,5 +1,6 @@
 import { cogneeImprove, cogneeRemember } from "@/lib/cognee";
-import { DEMO_PATIENT } from "@/lib/patient";
+import { requirePatientContext } from "@/lib/db/queries";
+import { errorResponse } from "@/lib/api-errors";
 import { getRoster, saveRoster } from "@/lib/roster";
 
 // Marks a diagnosis "ruled out" or a medication "discontinued". Cognee's
@@ -23,49 +24,54 @@ export async function POST(request: Request) {
     );
   }
 
-  const roster = await getRoster();
+  try {
+    const { patient } = await requirePatientContext();
+    const roster = await getRoster(patient.id);
 
-  let narrative: string;
-  if (entityType === "diagnosis") {
-    const dx = roster.diagnoses.find((d) => d.name.toLowerCase() === name.toLowerCase());
-    if (!dx || dx.status !== "active") {
-      return Response.json({ error: `No active diagnosis named "${name}"` }, { status: 404 });
+    let narrative: string;
+    if (entityType === "diagnosis") {
+      const dx = roster.diagnoses.find((d) => d.name.toLowerCase() === name.toLowerCase());
+      if (!dx || dx.status !== "active") {
+        return Response.json({ error: `No active diagnosis named "${name}"` }, { status: 404 });
+      }
+      dx.status = "ruled_out";
+      dx.ruledOutDate = date;
+      dx.ruledOutNote = note ?? undefined;
+      narrative = `${patient.name}'s ${dx.name} diagnosis has been ruled out as of ${date}${
+        note ? `: ${note}` : ""
+      }. It is no longer an active condition and no longer appears in the current clinical summary, though it remains in the historical record.`;
+    } else {
+      const med = roster.medications.find((m) => m.name.toLowerCase() === name.toLowerCase());
+      if (!med || med.status !== "current") {
+        return Response.json({ error: `No current medication named "${name}"` }, { status: 404 });
+      }
+      med.status = "discontinued";
+      med.discontinuedDate = date;
+      med.discontinuedNote = note ?? undefined;
+      narrative = `${patient.name}'s ${med.name} was discontinued as of ${date}${
+        note ? `: ${note}` : ""
+      }. It has moved from current medications to medication history.`;
     }
-    dx.status = "ruled_out";
-    dx.ruledOutDate = date;
-    dx.ruledOutNote = note ?? undefined;
-    narrative = `${DEMO_PATIENT.name}'s ${dx.name} diagnosis has been ruled out as of ${date}${
-      note ? `: ${note}` : ""
-    }. It is no longer an active condition and no longer appears in the current clinical summary, though it remains in the historical record.`;
-  } else {
-    const med = roster.medications.find((m) => m.name.toLowerCase() === name.toLowerCase());
-    if (!med || med.status !== "current") {
-      return Response.json({ error: `No current medication named "${name}"` }, { status: 404 });
+
+    await saveRoster(patient.id, roster);
+
+    const { status, body: rememberBody } = await cogneeRemember(narrative, patient.datasetName);
+    let improve: { status: number; body: unknown } | null = null;
+    if (status >= 200 && status < 300) {
+      try {
+        improve = await cogneeImprove(patient.datasetName);
+      } catch (err) {
+        console.error("cogneeImprove failed after status change:", err);
+      }
     }
-    med.status = "discontinued";
-    med.discontinuedDate = date;
-    med.discontinuedNote = note ?? undefined;
-    narrative = `${DEMO_PATIENT.name}'s ${med.name} was discontinued as of ${date}${
-      note ? `: ${note}` : ""
-    }. It has moved from current medications to medication history.`;
+
+    return Response.json({
+      roster,
+      narrative,
+      cognee: { status, body: rememberBody },
+      improve,
+    });
+  } catch (err) {
+    return errorResponse(err);
   }
-
-  await saveRoster(roster);
-
-  const { status, body: rememberBody } = await cogneeRemember(narrative, DEMO_PATIENT.datasetName);
-  let improve: { status: number; body: unknown } | null = null;
-  if (status >= 200 && status < 300) {
-    try {
-      improve = await cogneeImprove(DEMO_PATIENT.datasetName);
-    } catch (err) {
-      console.error("cogneeImprove failed after status change:", err);
-    }
-  }
-
-  return Response.json({
-    roster,
-    narrative,
-    cognee: { status, body: rememberBody },
-    improve,
-  });
 }

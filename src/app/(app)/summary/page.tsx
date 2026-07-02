@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Roster } from "@/lib/roster";
 
+type RosterResponse = Roster & { patient: { id: string; name: string } };
+
 type LogEntry = {
   time: string;
   op: "forget" | "improve";
@@ -17,7 +19,8 @@ function pushLog(setLog: (fn: (prev: LogEntry[]) => LogEntry[]) => void, entry: 
 }
 
 export default function SummaryPage() {
-  const [roster, setRoster] = useState<Roster | null>(null);
+  const [roster, setRoster] = useState<RosterResponse | null>(null);
+  const [noPatients, setNoPatients] = useState(false);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -25,7 +28,12 @@ export default function SummaryPage() {
 
   async function fetchRoster() {
     const res = await fetch("/api/documents/roster");
-    if (res.ok) setRoster(await res.json());
+    if (res.ok) {
+      setRoster(await res.json());
+      setNoPatients(false);
+    } else if (res.status === 409) {
+      setNoPatients(true);
+    }
   }
 
   useEffect(() => {
@@ -46,7 +54,7 @@ export default function SummaryPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `Status update failed (HTTP ${res.status})`);
 
-      setRoster(data.roster as Roster);
+      setRoster((prev) => (prev ? { ...(data.roster as Roster), patient: prev.patient } : prev));
       pushLog(setLog, {
         time: new Date().toLocaleTimeString(),
         op: "improve",
@@ -87,7 +95,7 @@ export default function SummaryPage() {
           </div>
           <p className="eyebrow mt-4">forget()</p>
           <h1 className="display d-lg mt-2 text-[var(--ink)]">
-            <em>Rina Kapoor&apos;s</em> current summary
+            <em>{roster?.patient.name ?? "your patient's"}</em> current summary
           </h1>
           <p className="lede mt-3 max-w-xl">
             Mark a diagnosis ruled out or a medication discontinued and the active summary updates
@@ -95,8 +103,19 @@ export default function SummaryPage() {
             deleted, it moves to history below.
           </p>
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          {noPatients && (
+            <p className="mt-3 text-sm text-[var(--ink-soft)]">
+              No patients yet — add or seed one from{" "}
+              <Link href="/remember" className="underline">
+                remember()
+              </Link>
+              .
+            </p>
+          )}
         </div>
 
+        {!noPatients && (
+        <>
         <section className="card p-6">
           <h2 className="mono text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
             Active conditions
@@ -207,6 +226,8 @@ export default function SummaryPage() {
             ))}
           </div>
         </section>
+        </>
+        )}
 
         <section>
           <h2 className="mono mb-3 text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">

@@ -22,8 +22,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      neo4j:
-        condition: service_healthy
     networks:
       - anamnesis-network
     env_file:
@@ -45,14 +43,32 @@ services:
       - VECTOR_DB_USERNAME=cognee
       - VECTOR_DB_PASSWORD=${DB_PASSWORD}
       - VECTOR_DB_NAME=cognee_db
-      - GRAPH_DATABASE_PROVIDER=neo4j
-      - GRAPH_DATABASE_URL=bolt://neo4j:7687
-      - GRAPH_DATABASE_USERNAME=neo4j
-      - GRAPH_DATABASE_PASSWORD=${NEO4J_PASSWORD}
-      # Single-tenant hackathon demo: no per-user/dataset isolation needed, and
-      # backend access control's supported graph backends (KuzuDB /
-      # neo4j_aura_dev) don't include a plain self-hosted Neo4j container.
-      - ENABLE_BACKEND_ACCESS_CONTROL=false
+      # Embedded Kuzu (Cognee's "ladybug" graph engine) instead of Neo4j.
+      # Phase 5 finding: Cognee's per-dataset access control creates one
+      # database per dataset, and for Neo4j that means `CREATE DATABASE`,
+      # which is a Neo4j Enterprise-only feature — the Community image this
+      # stack ran doesn't support it, so ENABLE_BACKEND_ACCESS_CONTROL=true
+      # was never actually achievable on Neo4j here. Kuzu is core to
+      # cognee/cognee:1.2.2 already (no image change needed), embedded
+      # (no separate service/container), and MIT-licensed. Each dataset gets
+      # its own Kuzu database file under /app/.cognee_system (already the
+      # existing cognee_data volume) — isolation by literal separate files.
+      - GRAPH_DATABASE_PROVIDER=kuzu
+      # Real per-dataset isolation, now actually achievable with Kuzu. This
+      # was `false` for the single-patient hackathon build; multi-patient
+      # tenancy (Phase 5) requires it — verified live that recall() leaked
+      # across datasets with it off, see Docs/progress.md.
+      - ENABLE_BACKEND_ACCESS_CONTROL=true
+      # Second Phase 5 isolation finding: Cognee's session-QA cache
+      # (SessionQAVector_text table) is keyed by user + a hardcoded
+      # "default_session" string, not by dataset — confirmed by inspecting
+      # the live pgvector DB directly. With one shared admin API key for the
+      # whole app (every org/patient), every recall() answer semantically
+      # blended in Q&A history from every other patient/org, even after the
+      # source dataset was forgotten (the cache entry outlives it). Disabling
+      # it entirely, since nothing in this app relies on cross-call session
+      # continuity — every recall() is a fresh, standalone graph query.
+      - CACHING=false
       # This instance is internet-reachable (behind Caddy/TLS), unlike the
       # local dev stack, so application-layer auth is mandatory here.
       - REQUIRE_AUTHENTICATION=true
@@ -69,8 +85,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.5"
-          memory: 2.5GB
+          cpus: "2"
+          memory: 3GB
 
   postgres:
     image: pgvector/pgvector:pg17
@@ -95,44 +111,12 @@ services:
         limits:
           memory: 1GB
 
-  neo4j:
-    image: neo4j:5.26
-    container_name: anamnesis-neo4j
-    restart: always
-    environment:
-      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
-      - NEO4J_PLUGINS=["apoc", "graph-data-science"]
-      # Keep Neo4j's own memory footprint bounded on a 4GB host shared with
-      # Postgres + Cognee.
-      - NEO4J_server_memory_heap_max__size=768m
-      - NEO4J_server_memory_pagecache_size=256m
-    # No "ports:" — internal network only. To debug via Neo4j Browser, use an
-    # SSH tunnel: gcloud compute ssh anamnesis-cognee-host --tunnel-through-iap
-    #   -- -L 7474:localhost:7474 -L 7687:localhost:7687
-    # (requires temporarily publishing the port on this container, or running
-    # `docker compose exec` tooling instead).
-    networks:
-      - anamnesis-network
-    volumes:
-      - neo4j_data:/data
-    healthcheck:
-      test: ["CMD-SHELL", "wget -O /dev/null -q http://localhost:7474 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          memory: 1.2GB
-
 networks:
   anamnesis-network:
     name: anamnesis-network
 
 volumes:
   postgres_data:
-  neo4j_data:
   cognee_data:
   caddy_data:
   caddy_config:

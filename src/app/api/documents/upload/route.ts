@@ -1,7 +1,8 @@
 import { cogneeForget, cogneeImprove, cogneeRemember } from "@/lib/cognee";
 import { extractEntitiesFromDocument } from "@/lib/gemini";
 import { buildNarrative } from "@/lib/narrative";
-import { DEMO_PATIENT } from "@/lib/patient";
+import { requirePatientContext } from "@/lib/db/queries";
+import { errorResponse } from "@/lib/api-errors";
 import { findDuplicateDocument, getRoster, mergeEntitiesIntoRoster, saveRoster } from "@/lib/roster";
 import { storeOriginalDocument } from "@/lib/storage";
 
@@ -17,12 +18,14 @@ export async function POST(request: Request) {
   const buffer = Buffer.from(await file.arrayBuffer());
 
   try {
+    const { patient } = await requirePatientContext();
+
     const entities = await extractEntitiesFromDocument(
       buffer,
       file.type || "application/pdf",
       typeof documentTypeHint === "string" ? documentTypeHint : undefined
     );
-    const narrative = buildNarrative(DEMO_PATIENT.name, entities);
+    const narrative = buildNarrative(patient.name, entities);
 
     let documentUrl: string | null = null;
     try {
@@ -37,18 +40,18 @@ export async function POST(request: Request) {
     // in the roster is treated as a near-duplicate report — forget() the
     // old data item so the new one supersedes it instead of the graph
     // accumulating two copies of the same report.
-    const roster = await getRoster();
+    const roster = await getRoster(patient.id);
     const duplicate = findDuplicateDocument(roster, entities);
     let forget: { status: number; body: unknown } | null = null;
     if (duplicate) {
       try {
-        forget = await cogneeForget({ dataId: duplicate.dataId, dataset: DEMO_PATIENT.datasetName });
+        forget = await cogneeForget({ dataId: duplicate.dataId, dataset: patient.datasetName });
       } catch (err) {
         console.error("cogneeForget failed while merging duplicate document:", err);
       }
     }
 
-    const { status, body } = await cogneeRemember(narrative, DEMO_PATIENT.datasetName);
+    const { status, body } = await cogneeRemember(narrative, patient.datasetName);
 
     // Re-run enrichment over the whole dataset so the newly-remembered
     // entities get linked into prior history (Phase 3 "Improve"), not just
@@ -57,7 +60,7 @@ export async function POST(request: Request) {
     let improve: { status: number; body: unknown } | null = null;
     if (status >= 200 && status < 300) {
       try {
-        improve = await cogneeImprove(DEMO_PATIENT.datasetName);
+        improve = await cogneeImprove(patient.datasetName);
       } catch (err) {
         console.error("cogneeImprove failed after upload:", err);
       }
@@ -69,7 +72,7 @@ export async function POST(request: Request) {
       const dataId = items?.[0]?.id;
       if (dataId) {
         updatedRoster = mergeEntitiesIntoRoster(roster, entities, dataId, narrative);
-        await saveRoster(updatedRoster);
+        await saveRoster(patient.id, updatedRoster);
       }
     }
 
@@ -87,9 +90,6 @@ export async function POST(request: Request) {
       { status: status >= 200 && status < 300 ? 200 : status }
     );
   } catch (err) {
-    return Response.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
-      { status: 500 }
-    );
+    return errorResponse(err);
   }
 }

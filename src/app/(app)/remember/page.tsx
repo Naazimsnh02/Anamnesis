@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ExtractedEntities } from "@/lib/gemini";
 import { GraphView, type GraphEdge, type GraphNode } from "@/components/GraphView";
+import { useActivePatient } from "@/lib/useActivePatient";
 
 const DOCUMENT_TYPES = [
   { value: "blood_report", label: "Blood report" },
@@ -35,6 +36,7 @@ function pushLog(setLog: (fn: (prev: LogEntry[]) => LogEntry[]) => void, entry: 
 }
 
 export default function RememberPage() {
+  const { activePatient, patients, loading: patientsLoading } = useActivePatient();
   const [documentType, setDocumentType] = useState<(typeof DOCUMENT_TYPES)[number]["value"]>(
     "blood_report"
   );
@@ -47,7 +49,8 @@ export default function RememberPage() {
   const [graphEdges, setGraphEdges] = useState<GraphEdge[]>([]);
   const [graphLoading, setGraphLoading] = useState(false);
 
-  async function fetchGraph() {
+  const fetchGraph = useCallback(async () => {
+    if (!activePatient) return;
     setGraphLoading(true);
     try {
       const res = await fetch("/api/cognee/graph");
@@ -59,12 +62,12 @@ export default function RememberPage() {
     } finally {
       setGraphLoading(false);
     }
-  }
+  }, [activePatient]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- standard fetch-on-mount to load the current graph
     fetchGraph();
-  }, []);
+  }, [fetchGraph]);
 
   async function handleUpload() {
     if (!file) return;
@@ -122,7 +125,7 @@ export default function RememberPage() {
     setBusy("seed");
     setError(null);
     try {
-      const res = await fetch("/api/documents/seed", { method: "POST" });
+      const res = await fetch("/api/patients/seed-demo", { method: "POST" });
       const data = await res.json();
       if (!res.ok && data.seeded === undefined) {
         throw new Error(data.error || `Seeding failed (HTTP ${res.status})`);
@@ -130,16 +133,20 @@ export default function RememberPage() {
       pushLog(setLog, {
         time: new Date().toLocaleTimeString(),
         op: "seed",
-        label: `Seeded ${data.seeded - data.failed}/${data.seeded} historical documents`,
+        label: `Seeded ${data.seeded - data.failed}/${data.seeded} documents across ${
+          new Set((data.results as { patient: string }[]).map((r) => r.patient)).size
+        } demo patients`,
         status: res.status,
-        detail: (data.results as { documentType: string; documentDate: string | null }[])
-          .map((r) => `${r.documentDate ?? "?"} · ${r.documentType}`)
+        detail: (data.results as { patient: string; documentType: string; documentDate: string | null }[])
+          .map((r) => `${r.patient} · ${r.documentDate ?? "?"} · ${r.documentType}`)
           .join(" — "),
       });
-      await fetchGraph();
+      // A new active patient may have just been set server-side (seed-demo
+      // sets it to the first seeded patient) — reload so the patient
+      // switcher and every other client-fetched piece of state re-resolves.
+      window.location.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
       setBusy(null);
     }
   }
@@ -163,7 +170,7 @@ export default function RememberPage() {
           </div>
           <p className="eyebrow mt-4">remember()</p>
           <h1 className="display d-lg mt-2 text-[var(--ink)]">
-            Grow <em>Rina Kapoor&apos;s</em> memory
+            Grow <em>{activePatient?.name ?? "your patient"}&apos;s</em> memory
           </h1>
           <p className="lede mt-3 max-w-xl">
             Upload a blood report, prescription, discharge summary, or imaging report. Gemini
@@ -172,55 +179,57 @@ export default function RememberPage() {
           </p>
         </div>
 
-        <section className="card p-6">
-          <h2 className="mono text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
-            Demo continuity
-          </h2>
-          <p className="lede mt-1 text-sm">
-            No history yet? Seed ~3 years of synthetic records (hypertension → declining kidney
-            function) in one call.
-          </p>
-          <button
-            onClick={handleSeed}
-            disabled={busy !== null}
-            className="btn btn-primary mt-4"
-          >
-            {busy === "seed" ? "Seeding history…" : "Seed patient history"}
-          </button>
-        </section>
-
-        <section className="card p-6">
-          <h2 className="mono text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
-            Upload a document
-          </h2>
-          <div className="mt-4 flex flex-col gap-4">
-            <select
-              value={documentType}
-              onChange={(e) => setDocumentType(e.target.value as typeof documentType)}
-              className="w-fit rounded border border-[var(--line)] bg-white px-3 py-2 text-sm"
-            >
-              {DOCUMENT_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-            <input
-              type="file"
-              accept="application/pdf,image/*"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="text-sm"
-            />
-            <button
-              onClick={handleUpload}
-              disabled={!file || busy !== null}
-              className="btn btn-primary w-fit"
-            >
-              {busy === "upload" ? "Extracting & remembering…" : "Upload & remember()"}
+        {!patientsLoading && patients.length === 0 && (
+          <section className="card p-6">
+            <h2 className="mono text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
+              No patients yet
+            </h2>
+            <p className="lede mt-1 text-sm">
+              Add a patient from the switcher above, or seed 2-3 synthetic demo patients (~3 years
+              of records each — hypertension → declining kidney function, diabetes, osteoarthritis)
+              in one call.
+            </p>
+            <button onClick={handleSeed} disabled={busy !== null} className="btn btn-primary mt-4">
+              {busy === "seed" ? "Seeding demo patients…" : "Seed demo patients"}
             </button>
-          </div>
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-        </section>
+            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          </section>
+        )}
+
+        {activePatient && (
+          <section className="card p-6">
+            <h2 className="mono text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
+              Upload a document
+            </h2>
+            <div className="mt-4 flex flex-col gap-4">
+              <select
+                value={documentType}
+                onChange={(e) => setDocumentType(e.target.value as typeof documentType)}
+                className="w-fit rounded border border-[var(--line)] bg-white px-3 py-2 text-sm"
+              >
+                {DOCUMENT_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="file"
+                accept="application/pdf,image/*"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="text-sm"
+              />
+              <button
+                onClick={handleUpload}
+                disabled={!file || busy !== null}
+                className="btn btn-primary w-fit"
+              >
+                {busy === "upload" ? "Extracting & remembering…" : "Upload & remember()"}
+              </button>
+            </div>
+            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          </section>
+        )}
 
         {results.length > 0 && (
           <section className="flex flex-col gap-4">

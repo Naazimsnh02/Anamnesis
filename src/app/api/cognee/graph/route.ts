@@ -1,18 +1,18 @@
 import { cogneeGetGraph, cogneeListDatasets } from "@/lib/cognee";
 import { toClinicalGraph, type RawGraph } from "@/lib/graph";
-import { DEMO_PATIENT } from "@/lib/patient";
+import { requirePatientContext } from "@/lib/db/queries";
+import { errorResponse } from "@/lib/api-errors";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const datasetName = searchParams.get("datasetName") || DEMO_PATIENT.datasetName;
-
+export async function GET() {
   try {
+    const { patient } = await requirePatientContext();
+
     const { status: dsStatus, body: dsBody } = await cogneeListDatasets();
     if (dsStatus >= 400) {
       return Response.json({ error: "Failed to list datasets", cognee: dsBody }, { status: dsStatus });
     }
 
-    const dataset = (dsBody as { id: string; name: string }[]).find((d) => d.name === datasetName);
+    const dataset = (dsBody as { id: string; name: string }[]).find((d) => d.name === patient.datasetName);
     if (!dataset) {
       return Response.json({ nodes: [], edges: [] });
     }
@@ -24,9 +24,6 @@ export async function GET(request: Request) {
 
     return Response.json(toClinicalGraph(body as RawGraph));
   } catch (err) {
-    return Response.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
-      { status: 500 }
-    );
+    return errorResponse(err);
   }
 }

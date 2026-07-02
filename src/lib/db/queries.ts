@@ -1,8 +1,13 @@
 import "server-only";
+import { randomUUID } from "crypto";
+import { cookies } from "next/headers";
 import { eq, and } from "drizzle-orm";
 import { auth, currentUser, clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db/client";
 import { orgs, clinicians, patients } from "@/lib/db/schema";
+import { datasetNameForPatient } from "@/lib/patient";
+
+export type Patient = typeof patients.$inferSelect;
 
 export type AuthContext = {
   clerkUserId: string;
@@ -66,4 +71,65 @@ export async function getPatientForOrg(orgId: string, patientId: string) {
     .where(and(eq(patients.orgId, orgId), eq(patients.id, patientId)))
     .limit(1);
   return patient ?? null;
+}
+
+export async function createPatient(orgId: string, name: string, dob: string): Promise<Patient> {
+  const id = randomUUID();
+  const [patient] = await db
+    .insert(patients)
+    .values({ id, orgId, name, dob, datasetName: datasetNameForPatient(id) })
+    .returning();
+  return patient;
+}
+
+export class NoPatientsError extends Error {
+  constructor() {
+    super("Org has no patients yet");
+    this.name = "NoPatientsError";
+  }
+}
+
+const ACTIVE_PATIENT_COOKIE = "anamnesis_active_patient";
+
+// Which patient is "selected" is stored client-side as a plain cookie (not
+// httpOnly — it's just a UI preference, not a secret) set by
+// POST /api/patients/active. Every server-scoped read here re-validates the
+// cookie's patientId actually belongs to the caller's org before trusting
+// it, so a stale/forged cookie can never leak another org's patient.
+export async function getActivePatientId(orgId: string): Promise<string | null> {
+  const jar = await cookies();
+  const cookiePatientId = jar.get(ACTIVE_PATIENT_COOKIE)?.value ?? null;
+
+  if (cookiePatientId) {
+    const patient = await getPatientForOrg(orgId, cookiePatientId);
+    if (patient) return patient.id;
+  }
+
+  const [first] = await listPatientsForOrg(orgId);
+  return first?.id ?? null;
+}
+
+export async function setActivePatientCookie(patientId: string) {
+  const jar = await cookies();
+  jar.set(ACTIVE_PATIENT_COOKIE, patientId, {
+    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+}
+
+export type PatientContext = AuthContext & { patient: Patient };
+
+// The one entry point every patient-scoped API route (recall, remember,
+// upload, roster, ...) should call instead of importing a hardcoded
+// DEMO_PATIENT. Throws NoPatientsError when the org genuinely has zero
+// patients yet — callers turn that into a clear "add a patient first"
+// response rather than a confusing 500/404.
+export async function requirePatientContext(): Promise<PatientContext> {
+  const authCtx = await requireOrgContext();
+  const patientId = await getActivePatientId(authCtx.orgId);
+  if (!patientId) throw new NoPatientsError();
+  const patient = await getPatientForOrg(authCtx.orgId, patientId);
+  if (!patient) throw new NoPatientsError();
+  return { ...authCtx, patient };
 }

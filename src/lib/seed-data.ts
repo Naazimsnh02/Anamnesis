@@ -1,16 +1,22 @@
 import type { ExtractedEntities } from "@/lib/gemini";
 
-// Synthetic 3-year clinical history for the demo patient (DEMO_PATIENT),
-// used to seed the memory graph for demo continuity (Implementation Plan
-// Phase 1). Shaped like extractEntitiesFromDocument()'s output so it flows
-// through the same buildNarrative() -> cogneeRemember() pipeline as a real
-// upload would. Tells the PRD §13 demo storyline: hypertension diagnosed,
-// medicated, kidney function gradually declines, a hyperkalemia admission
-// causes a medication swap, ending in a CKD diagnosis and nephrology
-// referral — so Phase 2's "Why is kidney function declining?" recall query
-// and Phase 4's forget()/discontinue flows have real history to work with.
+export type SeedPatient = {
+  name: string;
+  dob: string;
+  documents: ExtractedEntities[];
+};
+
+// Synthetic 3-year clinical history for the primary demo patient, used to
+// seed the memory graph for demo continuity (Implementation Plan Phase 1).
+// Shaped like extractEntitiesFromDocument()'s output so it flows through the
+// same buildNarrative() -> cogneeRemember() pipeline as a real upload would.
+// Tells the PRD §13 demo storyline: hypertension diagnosed, medicated,
+// kidney function gradually declines, a hyperkalemia admission causes a
+// medication swap, ending in a CKD diagnosis and nephrology referral — so
+// Phase 2's "Why is kidney function declining?" recall query and Phase 4's
+// forget()/discontinue flows have real history to work with.
 // All data is fictional; no real PHI.
-export const SEED_DOCUMENTS: ExtractedEntities[] = [
+export const RINA_KAPOOR_DOCUMENTS: ExtractedEntities[] = [
   {
     documentType: "blood_report",
     documentDate: "2023-08-10",
@@ -116,4 +122,75 @@ export const SEED_DOCUMENTS: ExtractedEntities[] = [
     ],
     summary: "Nephrology consult confirms CKD Stage 3 with mild metabolic acidosis; sodium bicarbonate started, amlodipine continued.",
   },
+];
+
+// Two lighter synthetic histories so the Phase 5 patient switcher has more
+// than one patient to switch between out of the box, each with a distinct
+// storyline. Not full 3-year narratives like Rina's — just enough real,
+// distinguishable graph content to demonstrate multi-patient scoping works.
+// All data is fictional; no real PHI.
+const ARJUN_MEHTA_DOCUMENTS: ExtractedEntities[] = [
+  {
+    documentType: "blood_report",
+    documentDate: "2025-01-12",
+    diagnoses: [{ name: "Type 2 Diabetes Mellitus", status: "active", date: "2025-01-12" }],
+    medications: [],
+    labValues: [
+      { test: "HbA1c", value: "8.1", unit: "%", date: "2025-01-12" },
+      { test: "Fasting Glucose", value: "162", unit: "mg/dL", date: "2025-01-12" },
+    ],
+    summary: "Routine screening reveals newly diagnosed type 2 diabetes with elevated HbA1c.",
+  },
+  {
+    documentType: "prescription",
+    documentDate: "2025-01-15",
+    diagnoses: [],
+    medications: [{ name: "Metformin", dosage: "500mg twice daily", reason: "type 2 diabetes" }],
+    labValues: [],
+    summary: "Metformin started as first-line treatment for newly diagnosed diabetes.",
+  },
+  {
+    documentType: "blood_report",
+    documentDate: "2025-07-22",
+    diagnoses: [],
+    medications: [],
+    labValues: [
+      { test: "HbA1c", value: "6.9", unit: "%", date: "2025-07-22" },
+      { test: "Fasting Glucose", value: "128", unit: "mg/dL", date: "2025-07-22" },
+    ],
+    summary: "Six-month follow-up shows improved glycemic control on metformin.",
+  },
+];
+
+const FATIMA_SHEIKH_DOCUMENTS: ExtractedEntities[] = [
+  {
+    documentType: "imaging_report",
+    documentDate: "2025-05-03",
+    diagnoses: [{ name: "Osteoarthritis, right knee", status: "active", date: "2025-05-03" }],
+    medications: [],
+    labValues: [],
+    summary: "Right knee X-ray shows moderate joint space narrowing consistent with osteoarthritis.",
+  },
+  {
+    documentType: "prescription",
+    documentDate: "2025-05-05",
+    diagnoses: [],
+    medications: [{ name: "Naproxen", dosage: "500mg twice daily as needed", reason: "osteoarthritis pain" }],
+    labValues: [],
+    summary: "Naproxen prescribed for osteoarthritis pain management.",
+  },
+  {
+    documentType: "discharge_summary",
+    documentDate: "2026-02-11",
+    diagnoses: [],
+    medications: [{ name: "Naproxen", dosage: "discontinued", reason: "GI upset" }],
+    labValues: [],
+    summary: "Naproxen discontinued after patient reported GI upset; switched to topical treatment, physiotherapy referral made.",
+  },
+];
+
+export const SEED_PATIENTS: SeedPatient[] = [
+  { name: "Rina Kapoor", dob: "1968-03-14", documents: RINA_KAPOOR_DOCUMENTS },
+  { name: "Arjun Mehta", dob: "1979-11-02", documents: ARJUN_MEHTA_DOCUMENTS },
+  { name: "Fatima Sheikh", dob: "1990-06-27", documents: FATIMA_SHEIKH_DOCUMENTS },
 ];

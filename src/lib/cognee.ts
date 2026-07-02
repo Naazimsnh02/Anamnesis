@@ -37,12 +37,20 @@ export async function cogneeRecall(
   options?: { includeReferences?: boolean; searchType?: string; topK?: number }
 ) {
   const { url, key } = requireConfig();
+  // RecallPayloadDTO takes `datasets` (an array of names) — NOT `datasetName`
+  // like remember()/improve()/forget() do (confirmed against the live
+  // instance's /openapi.json). Sending `datasetName` here was silently
+  // ignored by Cognee (unknown field), so `datasets` defaulted to null —
+  // "search all datasets you have read access to" — meaning every recall()
+  // call was searching across every patient's dataset on the instance, not
+  // just the intended one. Caught via a live cross-patient isolation test
+  // once a second patient existed to reveal it (see Docs/progress.md).
   const res = await fetch(`${url}/api/v1/recall`, {
     method: "POST",
     headers: { "X-Api-Key": key, "Content-Type": "application/json" },
     body: JSON.stringify({
       query,
-      datasetName,
+      datasets: [datasetName],
       includeReferences: options?.includeReferences ?? false,
       ...(options?.searchType ? { searchType: options.searchType } : {}),
       ...(options?.topK ? { topK: options.topK } : {}),
