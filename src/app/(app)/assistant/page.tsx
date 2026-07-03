@@ -93,8 +93,7 @@ export default function AssistantPage() {
   return (
     <main className="wrap flex max-w-4xl flex-col gap-10 py-16">
         <div>
-          <p className="eyebrow">Recall</p>
-          <h1 className="display d-lg mt-2 text-[var(--ink)]">
+          <h1 className="display d-lg text-[var(--ink)]">
             Ask <em>{activePatient?.name ?? "your patient"}&apos;s</em> memory
           </h1>
           <p className="lede mt-3">

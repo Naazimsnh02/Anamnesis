@@ -115,8 +115,7 @@ export default function RememberPage() {
   return (
     <main className="wrap flex max-w-4xl flex-col gap-10 py-16">
         <div>
-          <p className="eyebrow">Remember</p>
-          <h1 className="display d-lg mt-2 text-[var(--ink)]">
+          <h1 className="display d-lg text-[var(--ink)]">
             Grow <em>{activePatient?.name ?? "your patient"}&apos;s</em> memory
           </h1>
           <p className="lede mt-3">
@@ -132,11 +131,15 @@ export default function RememberPage() {
               No patients yet
             </h2>
             <p className="lede mt-1 text-sm">
-              Add a patient from the switcher above, or seed two or three synthetic demo patients with approximately three years of records each, including conditions like hypertension, declining kidney function, diabetes, and osteoarthritis, in one call.
+              {process.env.NEXT_PUBLIC_ENABLE_DEMO_SEED === "true"
+                ? "Add a patient from the switcher above, or seed two or three synthetic demo patients with approximately three years of records each, including conditions like hypertension, declining kidney function, diabetes, and osteoarthritis, in one call."
+                : "Add a patient from the switcher above to get started."}
             </p>
-            <button onClick={handleSeed} disabled={busy !== null} className="btn btn-primary mt-4">
-              {busy === "seed" ? "Seeding demo patients…" : "Seed demo patients"}
-            </button>
+            {process.env.NEXT_PUBLIC_ENABLE_DEMO_SEED === "true" && (
+              <button onClick={handleSeed} disabled={busy !== null} className="btn btn-primary mt-4">
+                {busy === "seed" ? "Seeding demo patients…" : "Seed demo patients"}
+              </button>
+            )}
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
           </section>
         )}

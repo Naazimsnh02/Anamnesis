@@ -30,6 +30,11 @@ export default clerkMiddleware(async (auth, req) => {
   if (userId && !orgId && !isOrgExemptRoute(req)) {
     return NextResponse.redirect(new URL("/onboarding", req.url));
   }
+  // Signed-in users hitting "/" (e.g. after the sign-in/up modal closes, or a
+  // direct visit) should land in the app, not on the marketing landing page.
+  if (userId && req.nextUrl.pathname === "/") {
+    return NextResponse.redirect(new URL(orgId ? "/dashboard" : "/onboarding", req.url));
+  }
 });
 
 export const config = {

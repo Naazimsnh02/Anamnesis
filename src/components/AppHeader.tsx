@@ -100,7 +100,7 @@ export function AppHeader() {
             onClick={togglePanel}
             className="mono flex items-center gap-1.5 rounded-full border border-[var(--line)] px-3 py-1.5 text-xs text-[var(--ink-soft)] transition hover:border-[var(--pen)] hover:text-[var(--ink)]"
           >
-            activity
+            Activity
             <span
               className="rounded-full px-1.5 text-[0.65rem]"
               style={{ background: "var(--paper-2)", color: "var(--ink)" }}
@@ -116,7 +116,7 @@ export function AppHeader() {
               onClick={() => openOrganizationProfile({ appearance: clerkAppearance })}
               className="mono text-xs text-[var(--ink-soft)] hover:text-[var(--ink)]"
             >
-              invite
+              Invite
             </button>
             <OrganizationSwitcher
               hidePersonal
@@ -162,7 +162,7 @@ export function AppHeader() {
               onClick={() => openOrganizationProfile({ appearance: clerkAppearance })}
               className="mono text-xs text-[var(--ink-soft)] hover:text-[var(--ink)]"
             >
-              invite a colleague
+              Invite a colleague
             </button>
             <div className="flex items-center gap-2">
               <OrganizationSwitcher

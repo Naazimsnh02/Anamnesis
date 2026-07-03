@@ -72,11 +72,11 @@ export function Nav() {
         <div className="flex items-center gap-2 sm:gap-3">
           <Show when="signed-out">
             <span className="hidden sm:inline-flex">
-              <SignInButton mode="modal">
+              <SignInButton mode="modal" forceRedirectUrl="/dashboard">
                 <button className="btn btn-ghost">Sign in</button>
               </SignInButton>
             </span>
-            <SignUpButton mode="modal">
+            <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
               <button className="btn btn-primary">
                 Get started
                 <span aria-hidden>→</span>

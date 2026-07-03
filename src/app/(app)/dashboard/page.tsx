@@ -9,18 +9,21 @@ import { useOpsLog } from "@/lib/opsLog";
 import { useActivePatient } from "@/lib/useActivePatient";
 import { FetchError } from "@/lib/swrFetcher";
 import { GraphView, type GraphEdge, type GraphNode } from "@/components/GraphView";
+import { DashboardSkeleton } from "@/components/Skeleton";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 type RosterResponse = Roster & { patient: { id: string; name: string } };
 type GraphResponse = { nodes: GraphNode[]; edges: GraphEdge[] };
 
 export default function DashboardPage() {
   const { logOp } = useOpsLog();
-  const { activePatient } = useActivePatient();
+  const { activePatient, refreshAll } = useActivePatient();
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [allergyInput, setAllergyInput] = useState("");
   const [appointmentInput, setAppointmentInput] = useState("");
+  const [seeding, setSeeding] = useState(false);
 
   const {
     data: roster,
@@ -56,7 +59,7 @@ export default function DashboardPage() {
       );
       logOp({
         op: "improve",
-        label: `Correction recorded — ${
+        label: `Correction recorded: ${
           entityType === "diagnosis" ? "ruled out" : "discontinued"
         }: ${name}`,
         status: data.cognee.status,
@@ -87,6 +90,23 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleSeedDemo() {
+    setSeeding(true);
+    setMutationError(null);
+    try {
+      const res = await fetch("/api/patients/seed-demo", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok && data.seeded === undefined) {
+        throw new Error(data.error || `Seeding failed (HTTP ${res.status})`);
+      }
+      await refreshAll();
+    } catch (err) {
+      setMutationError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setSeeding(false);
+    }
+  }
+
   const activeDiagnoses = roster?.diagnoses.filter((d) => d.status === "active") ?? [];
   const ruledOutDiagnoses = roster?.diagnoses.filter((d) => d.status === "ruled_out") ?? [];
   const currentMeds = roster?.medications.filter((m) => m.status === "current") ?? [];
@@ -99,9 +119,8 @@ export default function DashboardPage() {
   return (
     <main className="wrap flex max-w-4xl flex-col gap-10 py-16">
       <div>
-        <p className="eyebrow">Dashboard</p>
-        <h1 className="display d-lg mt-2 text-[var(--ink)]">
-          <em>{roster?.patient.name ?? "your patient's"}</em> overview
+        <h1 className="display d-lg text-[var(--ink)]">
+          <em>{roster?.patient.name ?? "Your patient's"}</em> overview
         </h1>
         <p className="lede mt-3">
           Everything Anamnesis remembers about this patient, including active conditions, medications,
@@ -115,19 +134,33 @@ export default function DashboardPage() {
             </button>
           </p>
         )}
-        {loading && !roster && !error && (
-          <p className="mt-3 text-sm text-[var(--ink-soft)]">Loading overview…</p>
-        )}
-        {noPatients && (
-          <p className="mt-3 text-sm text-[var(--ink-soft)]">
-            No patients yet — add or seed one from{" "}
-            <Link href="/remember" className="underline">
-              Remember
-            </Link>
-            .
-          </p>
-        )}
       </div>
+
+      {loading && !roster && !error && !noPatients && <DashboardSkeleton />}
+
+      {noPatients && (
+        <section className="card p-6">
+          <h2 className="mono text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
+            No patients yet
+          </h2>
+          <p className="lede mt-1 text-sm">
+            {process.env.NEXT_PUBLIC_ENABLE_DEMO_SEED === "true"
+              ? "Add a patient from the switcher above, or seed two or three synthetic demo patients with approximately three years of records each, including conditions like hypertension, declining kidney function, diabetes, and osteoarthritis, in one call."
+              : "Add a patient from the switcher above, then upload their documents from Remember."}
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            {process.env.NEXT_PUBLIC_ENABLE_DEMO_SEED === "true" && (
+              <button onClick={handleSeedDemo} disabled={seeding} className="btn btn-primary">
+                {seeding ? "Seeding demo patients…" : "Seed demo patients"}
+              </button>
+            )}
+            <Link href="/remember" className="mono text-xs text-[var(--pen)] underline">
+              or upload a document from Remember
+            </Link>
+          </div>
+          {mutationError && <p className="mt-3 text-sm text-red-600">{mutationError}</p>}
+        </section>
+      )}
 
       {!noPatients && roster && (
         <>
@@ -171,14 +204,13 @@ export default function DashboardPage() {
                       setAppointmentInput("");
                     }}
                   >
-                    <input
-                      type="date"
+                    <DatePicker
                       value={appointmentInput}
-                      onChange={(e) => setAppointmentInput(e.target.value)}
-                      className="rounded border border-[var(--line)] bg-white px-2 py-1 text-xs"
+                      onChange={setAppointmentInput}
+                      className="py-1 text-xs"
                     />
                     <button type="submit" className="mono text-xs text-[var(--pen)] hover:underline">
-                      set
+                      Set
                     </button>
                   </form>
                 )}
@@ -214,10 +246,10 @@ export default function DashboardPage() {
                     placeholder="add an allergy"
                     value={allergyInput}
                     onChange={(e) => setAllergyInput(e.target.value)}
-                    className="w-40 rounded border border-[var(--line)] bg-white px-2 py-1 text-xs"
+                    className="w-40 rounded-lg border border-[var(--line)] bg-white px-3 py-1.5 text-xs mono transition hover:border-[var(--pen)] focus:border-[var(--pen)] focus:outline-none"
                   />
                   <button type="submit" className="mono text-xs text-[var(--pen)] hover:underline">
-                    add
+                    Add
                   </button>
                 </form>
               </div>
@@ -231,7 +263,7 @@ export default function DashboardPage() {
             </h2>
             {activeDiagnoses.length === 0 && (
               <p className="mt-2 text-sm text-[var(--ink-faint)]">
-                None yet — seed patient history or upload a document from{" "}
+                None yet. Seed patient history or upload a document from{" "}
                 <Link href="/remember" className="underline">
                   Remember
                 </Link>
@@ -282,7 +314,7 @@ export default function DashboardPage() {
                     <div>
                       <p className="text-sm font-medium">
                         {med.name}
-                        {med.dosage ? ` — ${med.dosage}` : ""}
+                        {med.dosage ? ` · ${med.dosage}` : ""}
                       </p>
                       {med.firstDate && <p className="mono text-xs text-[var(--ink-faint)]">since {med.firstDate}</p>}
                     </div>
@@ -331,7 +363,7 @@ export default function DashboardPage() {
           <section className="card p-6">
             <div className="flex items-center justify-between">
               <h2 className="mono text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
-                Memory graph — {graphNodes.length} entities, {graphEdges.length} relationships
+                Memory graph: {graphNodes.length} entities, {graphEdges.length} relationships
               </h2>
               <button
                 onClick={() => fetchGraph()}
@@ -346,7 +378,11 @@ export default function DashboardPage() {
               added and linked into prior history.
             </p>
             <div className="mt-4">
-              <GraphView nodes={graphNodes} edges={graphEdges} />
+              {graphLoading && !graph ? (
+                <div className="skeleton h-64 w-full rounded-lg" />
+              ) : (
+                <GraphView nodes={graphNodes} edges={graphEdges} />
+              )}
             </div>
           </section>
 
@@ -357,7 +393,7 @@ export default function DashboardPage() {
             </h2>
             {roster.documents.length === 0 ? (
               <p className="mt-2 text-sm text-[var(--ink-faint)]">
-                No documents yet — upload one from{" "}
+                No documents yet. Upload one from{" "}
                 <Link href="/remember" className="underline">
                   Remember
                 </Link>
@@ -393,7 +429,7 @@ export default function DashboardPage() {
           {/* History */}
           <section className="card p-6">
             <h2 className="mono text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
-              History — ruled out &amp; discontinued
+              History: ruled out and discontinued
             </h2>
             <p className="mt-1 text-sm text-[var(--ink-soft)]">
               Nothing is deleted. These stay recoverable, just out of the active summary above.
@@ -406,14 +442,14 @@ export default function DashboardPage() {
                 <div key={dx.name} className="rounded border border-[var(--line)] p-3">
                   <span className="font-medium">{dx.name}</span>{" "}
                   <span className="text-[var(--ink-soft)]">ruled out {dx.ruledOutDate}</span>
-                  {dx.ruledOutNote && <span className="text-[var(--ink-faint)]"> — {dx.ruledOutNote}</span>}
+                  {dx.ruledOutNote && <span className="text-[var(--ink-faint)]"> · {dx.ruledOutNote}</span>}
                 </div>
               ))}
               {discontinuedMeds.map((med) => (
                 <div key={med.name} className="rounded border border-[var(--line)] p-3">
                   <span className="font-medium">{med.name}</span>{" "}
                   <span className="text-[var(--ink-soft)]">discontinued {med.discontinuedDate}</span>
-                  {med.discontinuedNote && <span className="text-[var(--ink-faint)]"> — {med.discontinuedNote}</span>}
+                  {med.discontinuedNote && <span className="text-[var(--ink-faint)]"> · {med.discontinuedNote}</span>}
                 </div>
               ))}
             </div>

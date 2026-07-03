@@ -47,7 +47,7 @@ export function OpsLogPanel() {
             className="mono text-xs text-[var(--ink-soft)] hover:text-[var(--ink)]"
             aria-label="Close activity panel"
           >
-            close ✕
+            Close ✕
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4">

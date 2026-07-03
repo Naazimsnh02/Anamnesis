@@ -125,7 +125,7 @@ export function Hero({ art }: { art: string | null }) {
           transition={{ duration: 0.8, ease: EASE, delay: 0.72 }}
         >
           <Show when="signed-out">
-            <SignUpButton mode="modal">
+            <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
               <Magnetic className="btn btn-primary">
                 Start remembering
                 <span aria-hidden>→</span>

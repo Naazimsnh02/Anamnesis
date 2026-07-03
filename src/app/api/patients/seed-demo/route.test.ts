@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// The route 404s unless demo seeding is explicitly enabled (see route.ts).
+process.env.NEXT_PUBLIC_ENABLE_DEMO_SEED = "true";
+
 const requireOrgContextMock = vi.fn();
 const listPatientsForOrgMock = vi.fn();
 const createPatientMock = vi.fn();
@@ -53,6 +56,14 @@ beforeEach(() => {
 });
 
 describe("POST /api/patients/seed-demo", () => {
+  it("404s when demo seeding is not explicitly enabled", async () => {
+    process.env.NEXT_PUBLIC_ENABLE_DEMO_SEED = "false";
+    const res = await POST();
+    expect(res.status).toBe(404);
+    expect(requireOrgContextMock).not.toHaveBeenCalled();
+    process.env.NEXT_PUBLIC_ENABLE_DEMO_SEED = "true";
+  });
+
   it("creates a new patient and remembers its seed documents when none exists yet", async () => {
     requireOrgContextMock.mockResolvedValue({ orgId: "org-1", clinicianId: "clin-1" });
     listPatientsForOrgMock.mockResolvedValue([]);

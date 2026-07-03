@@ -13,7 +13,18 @@ import { logError } from "@/lib/logger";
 // to switch between. Idempotent by patient name within the org: re-running
 // this after Rina already exists tops up any of her documents that are
 // still missing rather than creating a duplicate patient.
+// Off by default so production never advertises a one-click way to fabricate
+// patients. Flip NEXT_PUBLIC_ENABLE_DEMO_SEED=true (locally or on the Vercel
+// env for a demo) to re-enable — the UI buttons that call this route are
+// gated on the same flag, so this check is defense in depth, not the only guard.
+function isDemoSeedEnabled() {
+  return process.env.NEXT_PUBLIC_ENABLE_DEMO_SEED === "true";
+}
+
 export async function POST() {
+  if (!isDemoSeedEnabled()) {
+    return Response.json({ error: "Not found" }, { status: 404 });
+  }
   try {
     const { orgId, clinicianId } = await requireOrgContext();
     // Bulk-remembers ~10 documents across 2-3 patients — a legitimate demo

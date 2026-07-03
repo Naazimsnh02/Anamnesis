@@ -30,7 +30,7 @@ export function Cta() {
 
         <div className="mt-11 flex flex-wrap items-center justify-center gap-3">
           <Show when="signed-out">
-            <SignUpButton mode="modal">
+            <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
               <Magnetic className="btn btn-primary">
                 Start remembering
                 <span aria-hidden>→</span>
