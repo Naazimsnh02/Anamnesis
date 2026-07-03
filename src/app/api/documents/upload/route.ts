@@ -5,6 +5,8 @@ import { requirePatientContext } from "@/lib/db/queries";
 import { errorResponse } from "@/lib/api-errors";
 import { findDuplicateDocument, getRoster, mergeEntitiesIntoRoster, saveRoster } from "@/lib/roster";
 import { storeOriginalDocument } from "@/lib/storage";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { logError } from "@/lib/logger";
 
 export async function POST(request: Request) {
   const form = await request.formData();
@@ -18,7 +20,12 @@ export async function POST(request: Request) {
   const buffer = Buffer.from(await file.arrayBuffer());
 
   try {
-    const { patient } = await requirePatientContext();
+    const { patient, clinicianId } = await requirePatientContext();
+    // OCR + Cognee remember()/improve() is the most expensive write path in
+    // the app (Gemini vision call + two Cognee API calls) — cap it well
+    // below what a real upload workflow needs to blunt runaway retries or a
+    // misbehaving client.
+    await enforceRateLimit(`clinician:${clinicianId}:upload`, 20, 60);
 
     const entities = await extractEntitiesFromDocument(
       buffer,
@@ -33,7 +40,7 @@ export async function POST(request: Request) {
     } catch (err) {
       // Original-file storage (Vercel Blob) is not wired up yet in every
       // environment; the memory pipeline should still succeed without it.
-      console.error("storeOriginalDocument failed:", err);
+      logError("storeOriginalDocument.failed", err, { patientId: patient.id });
     }
 
     // Phase 4 "Forget": a document with the same type + date as one already
@@ -47,7 +54,7 @@ export async function POST(request: Request) {
       try {
         forget = await cogneeForget({ dataId: duplicate.dataId, dataset: patient.datasetName });
       } catch (err) {
-        console.error("cogneeForget failed while merging duplicate document:", err);
+        logError("cogneeForget.mergeDuplicate.failed", err, { patientId: patient.id, dataId: duplicate.dataId });
       }
     }
 
@@ -62,7 +69,7 @@ export async function POST(request: Request) {
       try {
         improve = await cogneeImprove(patient.datasetName);
       } catch (err) {
-        console.error("cogneeImprove failed after upload:", err);
+        logError("cogneeImprove.afterUpload.failed", err, { patientId: patient.id });
       }
     }
 

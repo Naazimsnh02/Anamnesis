@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useActivePatient } from "@/lib/useActivePatient";
 
 export function PatientSwitcher() {
-  const { patients, activePatientId, loading, switchPatient, refresh } = useActivePatient();
+  const { patients, activePatientId, loading, error, switchPatient, refresh } = useActivePatient();
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [dob, setDob] = useState("");
@@ -44,6 +44,11 @@ export function PatientSwitcher() {
 
   return (
     <div className="flex items-center gap-2">
+      {error && (
+        <span className="mono text-xs text-red-600" title={error}>
+          patients failed to load
+        </span>
+      )}
       <select
         value={activePatientId ?? ""}
         disabled={loading || patients.length === 0}

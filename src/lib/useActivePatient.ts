@@ -13,16 +13,22 @@ export function useActivePatient() {
   const [patients, setPatients] = useState<PatientSummary[]>([]);
   const [activePatientId, setActivePatientId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/patients");
       const data = await res.json();
       if (res.ok) {
         setPatients(data.patients ?? []);
         setActivePatientId(data.activePatientId ?? null);
+      } else {
+        setError(data.error || `Failed to load patients (HTTP ${res.status})`);
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load patients");
     } finally {
       setLoading(false);
     }
@@ -53,5 +59,5 @@ export function useActivePatient() {
 
   const activePatient = patients.find((p) => p.id === activePatientId) ?? null;
 
-  return { patients, activePatientId, activePatient, loading, refresh, switchPatient };
+  return { patients, activePatientId, activePatient, loading, error, refresh, switchPatient };
 }

@@ -101,14 +101,14 @@ Exit criteria: a clinician can sign in, see a roster of their org's patients, se
 
 Goal: the app behaves correctly under real (if still synthetic) multi-user, multi-patient conditions — not just the happy path a single demo walkthrough exercises.
 
-- [ ] Test suite: unit tests for `evidence.ts`, `narrative.ts`, and the Phase 5 roster/DB logic; contract tests for API routes against a mocked Cognee client
-- [ ] Error-handling audit across `src/app/api/**` — consistent error responses, and corresponding loading/error/empty UI states on every page
-- [ ] Rate limiting on write routes (upload, status-change)
-- [ ] Observability: error tracking (e.g. Sentry) + structured logs, covering both the Vercel app and the GCP Cognee VM
+- [x] Test suite: unit tests for `evidence.ts`, `narrative.ts`, and the Phase 5 roster/DB logic; contract tests for API routes against a mocked Cognee client — Vitest (`vitest.config.ts`), 105 tests across `src/lib/*.test.ts` and every `src/app/api/**/route.test.ts`
+- [x] Error-handling audit across `src/app/api/**` — consistent error responses, and corresponding loading/error/empty UI states on every page — all routes standardized on `errorResponse()` (`src/lib/api-errors.ts`); added `(app)/error.tsx`/`loading.tsx` + root `error.tsx`/`loading.tsx`; fixed missing try/catch and loading states in `summary/page.tsx`, `assistant/page.tsx`, `useActivePatient.ts`
+- [x] Rate limiting on write routes (upload, status-change) — Postgres-backed fixed-window limiter (`rate_limit_buckets` table, `src/lib/rate-limit.ts`), also applied to `patients` create and `patients/seed-demo`
+- [x] Observability: error tracking (e.g. Sentry) + structured logs, covering both the Vercel app and the GCP Cognee VM — `@sentry/nextjs` wired but gated on `SENTRY_DSN` (no-ops until a project is added), `src/lib/logger.ts` structured logging; GCP VM gets a JSON-formatted, rotated Caddy access log + bounded Docker log rotation on all services
 - [ ] Backups: automated snapshots for the GCP stack's Postgres+pgvector and Neo4j (currently none)
 - [ ] Push the repo to GitHub (currently local-only) and add CI (lint + build + test on push)
 
-Exit criteria: `npm run build`/`lint`/`test` all clean and enforced in CI; a bad upload or a Cognee timeout produces a handled error state, not a crash.
+Exit criteria: `npm run build`/`lint`/`test` all clean and enforced in CI; a bad upload or a Cognee timeout produces a handled error state, not a crash. **Partially met** — `build`/`lint`/`test` are all clean locally (not yet enforced in CI, pending the GitHub push item above); error states are handled throughout.
 
 ---
 

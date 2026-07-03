@@ -1,4 +1,6 @@
 import { createPatient, getActivePatientId, listPatientsForOrg, requireOrgContext } from "@/lib/db/queries";
+import { errorResponse } from "@/lib/api-errors";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export async function GET() {
   try {
@@ -9,10 +11,7 @@ export async function GET() {
     ]);
     return Response.json({ patients: patientList, activePatientId });
   } catch (err) {
-    return Response.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
-      { status: 500 }
-    );
+    return errorResponse(err);
   }
 }
 
@@ -26,13 +25,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { orgId } = await requireOrgContext();
+    const { orgId, clinicianId } = await requireOrgContext();
+    await enforceRateLimit(`clinician:${clinicianId}:create-patient`, 20, 60);
     const patient = await createPatient(orgId, name, dob);
     return Response.json({ patient }, { status: 201 });
   } catch (err) {
-    return Response.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
-      { status: 500 }
-    );
+    return errorResponse(err);
   }
 }

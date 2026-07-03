@@ -14,6 +14,12 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
+      - caddy_logs:/var/log/caddy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   cognee:
     image: cognee/cognee:1.2.2
@@ -87,6 +93,11 @@ services:
         limits:
           cpus: "2"
           memory: 3GB
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   postgres:
     image: pgvector/pgvector:pg17
@@ -110,6 +121,11 @@ services:
       resources:
         limits:
           memory: 1GB
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
 
 networks:
   anamnesis-network:
@@ -120,3 +136,4 @@ volumes:
   cognee_data:
   caddy_data:
   caddy_config:
+  caddy_logs:

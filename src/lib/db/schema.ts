@@ -10,6 +10,7 @@ import {
   text,
   timestamp,
   jsonb,
+  integer,
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
@@ -125,3 +126,15 @@ export const auditLog = pgTable("audit_log", {
   index("audit_log_patient_id_idx").on(t.patientId),
   index("audit_log_created_at_idx").on(t.createdAt),
 ]);
+
+// Fixed-window rate-limit counters (Phase 6 hardening). `key` is caller-built
+// (e.g. "clinician:<id>:upload") so one table serves every rate-limited
+// route instead of one table per route. Vercel serverless functions are
+// stateless between invocations, so this has to live in Postgres rather than
+// in-memory to actually work across instances.
+export const rateLimitBuckets = pgTable("rate_limit_buckets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  key: text("key").notNull(),
+  windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+  count: integer("count").notNull().default(0),
+}, (t) => [uniqueIndex("rate_limit_buckets_key_window_idx").on(t.key, t.windowStart)]);

@@ -3,6 +3,9 @@ import { buildNarrative } from "@/lib/narrative";
 import { createPatient, listPatientsForOrg, requireOrgContext, setActivePatientCookie } from "@/lib/db/queries";
 import { getRoster, mergeEntitiesIntoRoster, saveRoster } from "@/lib/roster";
 import { SEED_PATIENTS } from "@/lib/seed-data";
+import { errorResponse } from "@/lib/api-errors";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { logError } from "@/lib/logger";
 
 // Seeds the Implementation Plan's "2-3 synthetic patients under one demo
 // org" (Phase 5 checklist) — Rina Kapoor's full 3-year CKD storyline plus
@@ -12,7 +15,11 @@ import { SEED_PATIENTS } from "@/lib/seed-data";
 // still missing rather than creating a duplicate patient.
 export async function POST() {
   try {
-    const { orgId } = await requireOrgContext();
+    const { orgId, clinicianId } = await requireOrgContext();
+    // Bulk-remembers ~10 documents across 2-3 patients — a legitimate demo
+    // reseed is rare, so a tight hourly cap catches accidental double-clicks
+    // or scripted abuse without blocking normal use.
+    await enforceRateLimit(`clinician:${clinicianId}:seed-demo`, 5, 3600);
     const existing = await listPatientsForOrg(orgId);
 
     const results: { patient: string; documentType: string; documentDate: string | null; status: number }[] = [];
@@ -44,7 +51,7 @@ export async function POST() {
           }
         } catch (err) {
           results.push({ patient: patient.name, documentType: entities.documentType, documentDate: entities.documentDate, status: 500 });
-          console.error(`seed-demo remember() failed for ${patient.name}/${entities.documentType}:`, err);
+          logError("seedDemo.remember.failed", err, { patient: patient.name, documentType: entities.documentType });
         }
       }
       await saveRoster(patient.id, roster);
@@ -58,9 +65,6 @@ export async function POST() {
       { status: failed.length === results.length && results.length > 0 ? 500 : 200 }
     );
   } catch (err) {
-    return Response.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
-      { status: 500 }
-    );
+    return errorResponse(err);
   }
 }

@@ -1,4 +1,5 @@
 import { cogneeRemember } from "@/lib/cognee";
+import { errorResponse } from "@/lib/api-errors";
 
 export async function POST(request: Request) {
   const { text, datasetName } = await request.json();
@@ -14,9 +15,6 @@ export async function POST(request: Request) {
     );
     return Response.json(body, { status });
   } catch (err) {
-    return Response.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
-      { status: 500 }
-    );
+    return errorResponse(err);
   }
 }

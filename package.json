@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "generate:assets": "node scripts/generate-assets.mjs",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
@@ -15,6 +17,7 @@
   "dependencies": {
     "@clerk/nextjs": "^7.5.12",
     "@google/genai": "^2.10.0",
+    "@sentry/nextjs": "^10.63.0",
     "@types/d3-force": "^3.0.10",
     "@vercel/blob": "^2.5.0",
     "d3-force": "^3.0.0",
@@ -30,11 +33,14 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.3",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.9"
   }
 }

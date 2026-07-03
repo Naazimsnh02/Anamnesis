@@ -1,4 +1,5 @@
 import { getPatientForOrg, requireOrgContext, setActivePatientCookie } from "@/lib/db/queries";
+import { errorResponse } from "@/lib/api-errors";
 
 // Switches the "active patient" cookie every org-scoped page/route resolves
 // against (see requirePatientContext() in src/lib/db/queries.ts).
@@ -18,9 +19,6 @@ export async function POST(request: Request) {
     await setActivePatientCookie(patient.id);
     return Response.json({ patient });
   } catch (err) {
-    return Response.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
-      { status: 500 }
-    );
+    return errorResponse(err);
   }
 }

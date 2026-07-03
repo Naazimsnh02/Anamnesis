@@ -2,6 +2,8 @@ import { cogneeImprove, cogneeRemember } from "@/lib/cognee";
 import { requirePatientContext } from "@/lib/db/queries";
 import { errorResponse } from "@/lib/api-errors";
 import { getRoster, saveRoster } from "@/lib/roster";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { logError } from "@/lib/logger";
 
 // Marks a diagnosis "ruled out" or a medication "discontinued". Cognee's
 // forget() can't target a single graph entity (see src/lib/roster.ts), so
@@ -25,7 +27,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { patient } = await requirePatientContext();
+    const { patient, clinicianId } = await requirePatientContext();
+    await enforceRateLimit(`clinician:${clinicianId}:status`, 30, 60);
     const roster = await getRoster(patient.id);
 
     let narrative: string;
@@ -61,7 +64,7 @@ export async function POST(request: Request) {
       try {
         improve = await cogneeImprove(patient.datasetName);
       } catch (err) {
-        console.error("cogneeImprove failed after status change:", err);
+        logError("cogneeImprove.afterStatusChange.failed", err, { patientId: patient.id });
       }
     }
 

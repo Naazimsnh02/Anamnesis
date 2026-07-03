@@ -87,6 +87,16 @@ export default function AssistantPage() {
         },
         ...prev,
       ]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Network error";
+      setTurns((prev) => [
+        { question: trimmed, answer: "", evidence: [], source: null, error: message },
+        ...prev,
+      ]);
+      setLog((prev) => [
+        { time: new Date().toLocaleTimeString(), op: "recall", label: trimmed, status: 0, detail: message },
+        ...prev,
+      ]);
     } finally {
       setBusy(false);
     }

@@ -23,16 +23,28 @@ export default function SummaryPage() {
   const [noPatients, setNoPatients] = useState(false);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
 
   async function fetchRoster() {
-    const res = await fetch("/api/documents/roster");
-    if (res.ok) {
-      setRoster(await res.json());
-      setNoPatients(false);
-    } else if (res.status === 409) {
-      setNoPatients(true);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/documents/roster");
+      if (res.ok) {
+        setRoster(await res.json());
+        setNoPatients(false);
+      } else if (res.status === 409) {
+        setNoPatients(true);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Failed to load summary (HTTP ${res.status})`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load summary");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -102,7 +114,17 @@ export default function SummaryPage() {
             immediately via <span className="mono">forget()</span>-adjacent correction — nothing is
             deleted, it moves to history below.
           </p>
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          {error && (
+            <p className="mt-3 text-sm text-red-600">
+              {error}{" "}
+              <button onClick={fetchRoster} className="underline">
+                Retry
+              </button>
+            </p>
+          )}
+          {loading && !roster && !error && (
+            <p className="mt-3 text-sm text-[var(--ink-soft)]">Loading summary…</p>
+          )}
           {noPatients && (
             <p className="mt-3 text-sm text-[var(--ink-soft)]">
               No patients yet — add or seed one from{" "}
@@ -114,7 +136,7 @@ export default function SummaryPage() {
           )}
         </div>
 
-        {!noPatients && (
+        {!noPatients && roster && (
         <>
         <section className="card p-6">
           <h2 className="mono text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
