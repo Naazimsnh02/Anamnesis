@@ -1,4 +1,4 @@
-import { cogneeRemember } from "@/lib/cognee";
+import { cogneeGetLatestDataId, cogneeRemember } from "@/lib/cognee";
 import { buildNarrative } from "@/lib/narrative";
 import { createPatient, listPatientsForOrg, requireOrgContext, setActivePatientCookie } from "@/lib/db/queries";
 import { getRoster, mergeEntitiesIntoRoster, saveRoster } from "@/lib/roster";
@@ -53,11 +53,10 @@ export async function POST() {
       for (const entities of seedPatient.documents) {
         const narrative = buildNarrative(patient.name, entities);
         try {
-          const { status, body } = await cogneeRemember(narrative, patient.datasetName);
+          const { status } = await cogneeRemember(narrative, patient.datasetName);
           results.push({ patient: patient.name, documentType: entities.documentType, documentDate: entities.documentDate, status });
           if (status >= 200 && status < 300) {
-            const items = (body as { items?: { id?: string }[] } | null)?.items;
-            const dataId = items?.[0]?.id;
+            const dataId = await cogneeGetLatestDataId(patient.datasetName);
             if (dataId) roster = mergeEntitiesIntoRoster(roster, entities, dataId, narrative);
           }
         } catch (err) {

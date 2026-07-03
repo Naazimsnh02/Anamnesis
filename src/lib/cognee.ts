@@ -96,6 +96,32 @@ export async function cogneeForget(params: {
   return { status: res.status, body: await res.json() };
 }
 
+// remember()'s response `items` array lists every item in the dataset so
+// far, not just the one just added, and its order is not reliably
+// newest-first or newest-last (confirmed against the live instance: the
+// newly-created id has shown up at either end across repeated calls). So the
+// only reliable way to identify the item just created is to list the
+// dataset's data and take the one with the latest createdAt.
+export async function cogneeGetLatestDataId(datasetName: string): Promise<string | null> {
+  const { url, key } = requireConfig();
+  const dsRes = await fetch(`${url}/api/v1/datasets`, {
+    headers: { "X-Api-Key": key },
+    cache: "no-store",
+  });
+  const datasets = (await dsRes.json()) as { id?: string; name?: string }[];
+  const dataset = Array.isArray(datasets) ? datasets.find((d) => d.name === datasetName) : null;
+  if (!dataset?.id) return null;
+
+  const dataRes = await fetch(`${url}/api/v1/datasets/${dataset.id}/data`, {
+    headers: { "X-Api-Key": key },
+    cache: "no-store",
+  });
+  const items = (await dataRes.json()) as { id: string; createdAt: string }[];
+  if (!Array.isArray(items) || items.length === 0) return null;
+
+  return items.reduce((latest, item) => (item.createdAt > latest.createdAt ? item : latest)).id;
+}
+
 export async function cogneeListDatasets() {
   const { url, key } = requireConfig();
   const res = await fetch(`${url}/api/v1/datasets`, {

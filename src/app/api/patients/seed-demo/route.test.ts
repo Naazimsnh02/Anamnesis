@@ -11,6 +11,7 @@ const getRosterMock = vi.fn();
 const saveRosterMock = vi.fn();
 const mergeEntitiesIntoRosterMock = vi.fn();
 const cogneeRememberMock = vi.fn();
+const cogneeGetLatestDataIdMock = vi.fn();
 const enforceRateLimitMock = vi.fn();
 
 vi.mock("@/lib/db/queries", () => ({
@@ -33,7 +34,10 @@ vi.mock("@/lib/roster", () => ({
   saveRoster: saveRosterMock,
   mergeEntitiesIntoRoster: mergeEntitiesIntoRosterMock,
 }));
-vi.mock("@/lib/cognee", () => ({ cogneeRemember: cogneeRememberMock }));
+vi.mock("@/lib/cognee", () => ({
+  cogneeRemember: cogneeRememberMock,
+  cogneeGetLatestDataId: cogneeGetLatestDataIdMock,
+}));
 vi.mock("@/lib/logger", () => ({ logError: vi.fn() }));
 vi.mock("@/lib/seed-data", () => ({
   SEED_PATIENTS: [
@@ -53,6 +57,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   enforceRateLimitMock.mockResolvedValue(undefined);
   mergeEntitiesIntoRosterMock.mockReturnValue({ diagnoses: [], medications: [], documents: [{ dataId: "d1" }] });
+  cogneeGetLatestDataIdMock.mockResolvedValue("d1");
 });
 
 describe("POST /api/patients/seed-demo", () => {

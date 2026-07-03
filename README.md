@@ -80,16 +80,16 @@ Electronic health records store documents. They don't connect years of scattered
 
 ```
 ┌─────────────────────────┐        ┌──────────────────────────┐
-│   Next.js (App Router)  │  HTTPS │   Self-hosted Cognee      │
-│   Vercel                │──────▶│   (GCP VM, Docker, TLS)   │
-│                          │  API   │                          │
+│   Next.js (App Router)  │  HTTPS │   Self-hosted Cognee     │
+│   Vercel                │ ---->  │   (GCP VM, Docker, TLS)  │
+│                         │  API   │                          │
 │  · Clerk (auth + orgs)  │  key   │  · Postgres + pgvector   │
-│  · Postgres/Neon        │◀──────│    (vector store)         │
+│  · Postgres/Neon        │ <----  │    (vector store)        │
 │    (tenancy, roster,    │        │  · Kuzu (embedded graph) │
 │    audit log)           │        │                          │
 │  · Gemini (OCR + LLM)   │        │  remember / recall /     │
-└─────────────────────────┘        │  improve / forget         │
-                                    └──────────────────────────┘
+└─────────────────────────┘        │  improve / forget        │
+                                   └──────────────────────────┘
 ```
 
 - **Multi-tenant by design**: Clerk Organizations model a clinic; clinicians and patients are scoped to one org, with every API route and Cognee call org-scoped.

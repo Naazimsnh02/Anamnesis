@@ -14,9 +14,15 @@ export type ClinicalGraph = { nodes: ClinicalGraphNode[]; edges: ClinicalGraphEd
 const CLINICAL_NODE_TYPES = new Set(["Entity", "EntityType"]);
 
 export function toClinicalGraph(raw: RawGraph): ClinicalGraph {
-  const nodes = raw.nodes.filter((n) => CLINICAL_NODE_TYPES.has(n.type));
-  const nodeIds = new Set(nodes.map((n) => n.id));
-  const edges = raw.edges.filter((e) => nodeIds.has(e.source) && nodeIds.has(e.target));
+  // Cognee's raw graph can list the same entity more than once (e.g. it's
+  // referenced from multiple document chunks), so dedupe by id before
+  // rendering — otherwise React sees duplicate keys for the same node.
+  const seen = new Map<string, RawGraphNode>();
+  for (const n of raw.nodes) {
+    if (CLINICAL_NODE_TYPES.has(n.type) && !seen.has(n.id)) seen.set(n.id, n);
+  }
+  const nodes = [...seen.values()];
+  const edges = raw.edges.filter((e) => seen.has(e.source) && seen.has(e.target));
   return {
     nodes: nodes.map((n) => ({ id: n.id, label: n.label, type: n.type })),
     edges: edges.map((e) => ({ source: e.source, target: e.target, label: e.label })),

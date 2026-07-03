@@ -1,4 +1,4 @@
-import { cogneeForget, cogneeImprove, cogneeRemember } from "@/lib/cognee";
+import { cogneeForget, cogneeGetLatestDataId, cogneeImprove, cogneeRemember } from "@/lib/cognee";
 import { extractEntitiesFromDocument } from "@/lib/gemini";
 import { buildNarrative } from "@/lib/narrative";
 import { requirePatientContext } from "@/lib/db/queries";
@@ -75,8 +75,7 @@ export async function POST(request: Request) {
 
     let updatedRoster = roster;
     if (status >= 200 && status < 300) {
-      const items = (body as { items?: { id?: string }[] } | null)?.items;
-      const dataId = items?.[0]?.id;
+      const dataId = await cogneeGetLatestDataId(patient.datasetName);
       if (dataId) {
         updatedRoster = mergeEntitiesIntoRoster(roster, entities, dataId, narrative, documentUrl);
         await saveRoster(patient.id, updatedRoster);

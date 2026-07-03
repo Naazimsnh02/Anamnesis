@@ -10,6 +10,7 @@ const mergeEntitiesIntoRosterMock = vi.fn();
 const cogneeRememberMock = vi.fn();
 const cogneeImproveMock = vi.fn();
 const cogneeForgetMock = vi.fn();
+const cogneeGetLatestDataIdMock = vi.fn();
 const enforceRateLimitMock = vi.fn();
 
 vi.mock("@/lib/db/queries", () => ({
@@ -37,6 +38,7 @@ vi.mock("@/lib/cognee", () => ({
   cogneeRemember: cogneeRememberMock,
   cogneeImprove: cogneeImproveMock,
   cogneeForget: cogneeForgetMock,
+  cogneeGetLatestDataId: cogneeGetLatestDataIdMock,
 }));
 
 const { POST } = await import("./route");
@@ -70,6 +72,7 @@ beforeEach(() => {
   findDuplicateDocumentMock.mockReturnValue(null);
   mergeEntitiesIntoRosterMock.mockReturnValue({ diagnoses: [], medications: [], documents: [{ dataId: "d1" }] });
   cogneeRememberMock.mockResolvedValue({ status: 200, body: { items: [{ id: "d1" }] } });
+  cogneeGetLatestDataIdMock.mockResolvedValue("d1");
   cogneeImproveMock.mockResolvedValue({ status: 200, body: {} });
 });
 
