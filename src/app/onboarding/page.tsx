@@ -8,7 +8,7 @@ import { OrganizationList } from "@clerk/nextjs";
 // "create or join the one org you belong to," not a multi-org switcher.
 export default async function OnboardingPage() {
   const { orgId } = await auth();
-  if (orgId) redirect("/remember");
+  if (orgId) redirect("/dashboard");
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[var(--paper)] px-6 py-16">
@@ -22,8 +22,8 @@ export default async function OnboardingPage() {
         </div>
         <OrganizationList
           hidePersonal
-          afterCreateOrganizationUrl="/remember"
-          afterSelectOrganizationUrl="/remember"
+          afterCreateOrganizationUrl="/dashboard"
+          afterSelectOrganizationUrl="/dashboard"
           appearance={{
             variables: {
               colorPrimary: "var(--pen)",

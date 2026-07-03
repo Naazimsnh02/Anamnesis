@@ -112,9 +112,9 @@ export function Hero({ art }: { art: string | null }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: EASE, delay: 0.6 }}
         >
-          A patient&apos;s history is scattered across hospitals, labs and years of
-          paper. Anamnesis turns it into one living memory — connected, reasoned over,
-          and always current. Medical records store information. Anamnesis remembers
+          A patient's history is scattered across hospitals, labs, and years of
+          paper. Anamnesis turns it into one living memory that is connected, reasoned over,
+          and always current. Medical records store information; Anamnesis remembers
           the patient.
         </motion.p>
 
@@ -133,7 +133,7 @@ export function Hero({ art }: { art: string | null }) {
             </SignUpButton>
           </Show>
           <Show when="signed-in">
-            <Magnetic href="/remember" className="btn btn-primary">
+            <Magnetic href="/dashboard" className="btn btn-primary">
               Open the app
               <span aria-hidden>→</span>
             </Magnetic>
@@ -161,7 +161,7 @@ export function Hero({ art }: { art: string | null }) {
           <span>Recall</span>
           <span>Improve</span>
           <span>Forget</span>
-          <span className="hidden sm:inline">— the four stages of a living patient record</span>
+          <span className="hidden sm:inline">(the four stages of a living patient record)</span>
         </motion.div>
       </div>
 

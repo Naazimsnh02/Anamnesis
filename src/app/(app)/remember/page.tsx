@@ -1,13 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import useSWR from "swr";
 import type { ExtractedEntities } from "@/lib/gemini";
-import { GraphView, type GraphEdge, type GraphNode } from "@/components/GraphView";
 import { useActivePatient } from "@/lib/useActivePatient";
 import { useOpsLog } from "@/lib/opsLog";
-
-type GraphResponse = { nodes: GraphNode[]; edges: GraphEdge[] };
 
 const DOCUMENT_TYPES = [
   { value: "blood_report", label: "Blood report" },
@@ -36,14 +33,6 @@ export default function RememberPage() {
   const [busy, setBusy] = useState<"upload" | "seed" | null>(null);
   const [results, setResults] = useState<UploadResult[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-  const {
-    data: graph,
-    isLoading: graphLoading,
-    mutate: fetchGraph,
-  } = useSWR<GraphResponse>(activePatient ? "/api/cognee/graph" : null);
-  const graphNodes = graph?.nodes ?? [];
-  const graphEdges = graph?.edges ?? [];
 
   async function handleUpload() {
     if (!file) return;
@@ -86,7 +75,6 @@ export default function RememberPage() {
         });
       }
       setFile(null);
-      await fetchGraph();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -131,10 +119,10 @@ export default function RememberPage() {
           <h1 className="display d-lg mt-2 text-[var(--ink)]">
             Grow <em>{activePatient?.name ?? "your patient"}&apos;s</em> memory
           </h1>
-          <p className="lede mt-3 max-w-xl">
+          <p className="lede mt-3">
             Upload a blood report, prescription, discharge summary, or imaging report.
             Anamnesis extracts the structured clinical entities and adds them to the
-            patient&apos;s memory graph.
+            patient's memory graph.
           </p>
         </div>
 
@@ -144,9 +132,7 @@ export default function RememberPage() {
               No patients yet
             </h2>
             <p className="lede mt-1 text-sm">
-              Add a patient from the switcher above, or seed 2-3 synthetic demo patients (~3 years
-              of records each — hypertension → declining kidney function, diabetes, osteoarthritis)
-              in one call.
+              Add a patient from the switcher above, or seed two or three synthetic demo patients with approximately three years of records each, including conditions like hypertension, declining kidney function, diabetes, and osteoarthritis, in one call.
             </p>
             <button onClick={handleSeed} disabled={busy !== null} className="btn btn-primary mt-4">
               {busy === "seed" ? "Seeding demo patients…" : "Seed demo patients"}
@@ -224,30 +210,15 @@ export default function RememberPage() {
                 )}
               </div>
             ))}
+            <p className="mono mt-2 text-xs text-[var(--ink-soft)]">
+              See the growing memory graph and full document list on the{" "}
+              <Link href="/dashboard" className="text-[var(--pen)] underline">
+                dashboard
+              </Link>
+              .
+            </p>
           </section>
         )}
-
-        <section className="card p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="mono text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
-              Memory graph — {graphNodes.length} entities, {graphEdges.length} relationships
-            </h2>
-            <button
-              onClick={() => fetchGraph()}
-              disabled={graphLoading}
-              className="mono text-xs text-[var(--pen)] underline disabled:opacity-50"
-            >
-              {graphLoading ? "refreshing…" : "refresh"}
-            </button>
-          </div>
-          <p className="mt-1 text-sm text-[var(--ink-soft)]">
-            Live view of the patient&apos;s knowledge graph. Grows every time a document is
-            added and linked into prior history.
-          </p>
-          <div className="mt-4">
-            <GraphView nodes={graphNodes} edges={graphEdges} />
-          </div>
-        </section>
     </main>
   );
 }

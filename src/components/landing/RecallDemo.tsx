@@ -23,7 +23,7 @@ const DEMOS: Demo[] = [
       "2 dehydration admissions",
     ],
     answer:
-      "Kidney function has declined alongside rising creatinine and falling eGFR, against a background of poorly controlled hypertension and two dehydration-related admissions — consistent with hypertensive nephropathy, not an acute event.",
+      "Kidney function has declined alongside rising creatinine and falling eGFR, against a background of poorly controlled hypertension and two dehydration-related admissions, which is consistent with hypertensive nephropathy rather than an acute event.",
   },
   {
     q: "When did diabetes first appear?",
@@ -45,7 +45,7 @@ const DEMOS: Demo[] = [
       "Symptom resolved · Mar 2025",
     ],
     answer:
-      "The timeline points to metformin: nausea began weeks after initiation and resolved when the dose was held — a likely side-effect relationship the graph surfaced automatically.",
+      "The timeline points to metformin, as nausea began weeks after initiation and resolved when the dose was held, indicating a likely side-effect relationship the graph surfaced automatically.",
   },
 ];
 
@@ -65,11 +65,11 @@ export function RecallDemo() {
       <div className="wrap">
         <Reveal>
           <p className="eyebrow">Recall, live</p>
-          <h2 className="display d-xl mt-5 max-w-[15ch]">
+          <h2 className="display d-xl mt-5">
             Ask the history. See the <em>reasoning.</em>
           </h2>
-          <p className="lede mt-6 max-w-[56ch]">
-            Not a document search that hands back a passage — a walk across the patient&apos;s
+          <p className="lede mt-6">
+            Not a document search that hands back a passage, but a walk across the patient's
             graph, returned with the evidence it stepped through. Pick a question.
           </p>
         </Reveal>

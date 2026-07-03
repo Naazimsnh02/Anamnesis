@@ -17,12 +17,12 @@ export function Memory() {
       <div className="wrap">
         <Reveal>
           <p className="eyebrow on-ink">Four operations, one memory</p>
-          <h2 className="display d-xl mt-5 max-w-[16ch]">
+          <h2 className="display d-xl mt-5">
             The lifecycle of a <em>remembered</em> patient
           </h2>
-          <p className="lede mt-6 max-w-[58ch]">
+          <p className="lede mt-6">
             Anamnesis is built on four memory operations. Every one is visible in the
-            product — not hidden behind the interface, but the interface itself.
+            product, presented not hidden behind the interface, but as the interface itself.
           </p>
         </Reveal>
 

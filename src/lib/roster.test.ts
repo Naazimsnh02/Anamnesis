@@ -38,7 +38,13 @@ describe("getRoster", () => {
   it("returns an empty roster when the blob doesn't exist yet", async () => {
     headMock.mockRejectedValue(new FakeBlobNotFoundError("not found"));
     const roster = await getRoster("patient-1");
-    expect(roster).toEqual({ diagnoses: [], medications: [], documents: [] });
+    expect(roster).toEqual({
+      diagnoses: [],
+      medications: [],
+      documents: [],
+      allergies: [],
+      upcomingAppointment: null,
+    });
   });
 
   it("re-throws non-BlobNotFoundError errors", async () => {
@@ -48,7 +54,13 @@ describe("getRoster", () => {
 
   it("fetches and parses the roster JSON when the blob exists", async () => {
     headMock.mockResolvedValue({ downloadUrl: "https://blob/roster.json" });
-    const roster = { diagnoses: [], medications: [], documents: [] };
+    const roster = {
+      diagnoses: [],
+      medications: [],
+      documents: [],
+      allergies: [],
+      upcomingAppointment: null,
+    };
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => roster,
@@ -61,7 +73,13 @@ describe("getRoster", () => {
     headMock.mockResolvedValue({ downloadUrl: "https://blob/roster.json" });
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: false });
     const result = await getRoster("patient-1");
-    expect(result).toEqual({ diagnoses: [], medications: [], documents: [] });
+    expect(result).toEqual({
+      diagnoses: [],
+      medications: [],
+      documents: [],
+      allergies: [],
+      upcomingAppointment: null,
+    });
   });
 });
 
@@ -178,7 +196,13 @@ describe("mergeEntitiesIntoRoster", () => {
     };
     const result = mergeEntitiesIntoRoster(roster, entities(), "new", "new narrative");
     expect(result.documents).toEqual([
-      { dataId: "new", documentType: "blood_report", documentDate: "2024-01-01", narrative: "new narrative" },
+      {
+        dataId: "new",
+        documentType: "blood_report",
+        documentDate: "2024-01-01",
+        narrative: "new narrative",
+        documentUrl: null,
+      },
     ]);
   });
 });

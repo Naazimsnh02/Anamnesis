@@ -24,7 +24,7 @@ export function Cta() {
         </h2>
 
         <p className="lede mx-auto mt-7 max-w-[52ch]">
-          Turn years of scattered documents into one connected clinical memory —
+          Turn years of scattered documents into one connected clinical memory
           on infrastructure you control, built entirely on open source.
         </p>
 
@@ -38,7 +38,7 @@ export function Cta() {
             </SignUpButton>
           </Show>
           <Show when="signed-in">
-            <Magnetic href="/remember" className="btn btn-primary">
+            <Magnetic href="/dashboard" className="btn btn-primary">
               Open the app
               <span aria-hidden>→</span>
             </Magnetic>

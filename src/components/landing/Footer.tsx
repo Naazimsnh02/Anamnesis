@@ -22,8 +22,8 @@ export function Footer() {
               </span>
             </div>
             <p className="mt-4 max-w-[34ch] leading-relaxed" style={{ color: "#a9bab6" }}>
-              A persistent clinical memory that remembers, recalls, improves and forgets —
-              so the patient&apos;s whole story is always in the room.
+              A persistent clinical memory that remembers, recalls, improves, and forgets,
+              ensuring the patient's whole story is always in the room.
             </p>
           </div>
 

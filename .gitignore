@@ -15,3 +15,11 @@ Thumbs.db
 
 .vercel
 .env*.local
+
+# Internal planning docs (kept locally, not part of the public repo)
+/Docs/
+/CLAUDE.md
+
+# Dev-only scratch script and TS build cache (not part of the shipped app)
+/scratch-e2e.mts
+tsconfig.tsbuildinfo

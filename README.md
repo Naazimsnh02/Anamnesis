@@ -1,36 +1,144 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<p align="center">
+  <img src="public\logo_white_bg.png" alt="Anamnesis" width="120" />
+</p>
 
-## Getting Started
+<h1 align="center">Anamnesis</h1>
+<p align="center"><i>Every patient's story. Remembered.</i></p>
 
-First, run the development server:
+<p align="center">
+  <a href="https://anamnesisai.vercel.app"><img src="https://img.shields.io/badge/Live%20App-anamnesisai.vercel.app-1f6feb?style=flat-square" alt="Live App"></a>
+  <img src="https://img.shields.io/badge/Hackathon-Cognee:%20Best%20Use%20of%20Open%20Source-orange?style=flat-square" alt="Hackathon Track">
+  <img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js" alt="Next.js 16">
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Memory%20Engine-Cognee%20(self--hosted)-8A2BE2?style=flat-square" alt="Memory Engine">
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License">
+</p>
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## What is Anamnesis?
+
+Medical records store information. **Anamnesis remembers the patient.**
+
+A patient's history is scattered across blood reports, prescriptions, discharge summaries, and imaging. Every visit starts with a doctor reconstructing the past instead of treating the present. Anamnesis turns that pile of documents into a living, connected clinical memory: upload a report, and it becomes part of a knowledge graph that links diagnoses, medications, labs, and visits together, growing more useful with every new fact.
+
+It's built on top of **[Cognee](https://github.com/topoteretes/cognee)**'s four memory primitives, self-hosted end-to-end so patient data never leaves infrastructure we control:
+
+| Operation | What it does in Anamnesis |
+|---|---|
+| **Remember** | Ingests a document (PDF, scanned prescription, report), extracts structured medical entities via vision-based OCR, and commits them to the patient's memory graph. |
+| **Recall** | Answers a clinician's question by retrieving connected clinical context — not by searching documents. |
+| **Improve** | Re-processes the graph as new information arrives, strengthening and correcting relationships between facts. |
+| **Forget** | Intelligently retires duplicate, resolved, or obsolete information while preserving the historical record. |
+
+Every one of these operations is visible in the app's live operations panel. Anamnesis is designed *through* Cognee, not around it.
+
+**Live app:** [anamnesisai.vercel.app](https://anamnesisai.vercel.app)
+
+---
+
+## Why this exists
+
+Electronic health records store documents. They don't connect years of scattered medical events into a coherent story, so every consultation begins with a doctor re-reading the past instead of reasoning about it. Anamnesis is a bet that clinical software should behave like a memory, not a filing cabinet: every upload strengthens what's already known, and every question is answered with the full weight of a patient's history behind it.
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────┐        ┌──────────────────────────┐
+│   Next.js (App Router)  │  HTTPS │   Self-hosted Cognee      │
+│   Vercel                │──────▶│   (GCP VM, Docker, TLS)   │
+│                          │  API   │                          │
+│  · Clerk (auth + orgs)  │  key   │  · Postgres + pgvector   │
+│  · Postgres/Neon        │◀──────│    (vector store)         │
+│    (tenancy, roster,    │        │  · Kuzu (embedded graph) │
+│    audit log)           │        │                          │
+│  · Gemini (OCR + LLM)   │        │  remember / recall /     │
+└─────────────────────────┘        │  improve / forget         │
+                                    └──────────────────────────┘
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Multi-tenant by design**: Clerk Organizations model a clinic; clinicians and patients are scoped to one org, with every API route and Cognee call org-scoped.
+- **App state vs. clinical memory**: Postgres holds tenancy state (orgs, clinicians, patient roster, audit log) only. Cognee's graph is the single source of truth for clinical facts and their relationships; the app never builds a shadow copy of it.
+- **PHI-aware from day one**: The architecture is built for real patient data (encryption in transit/at rest, tenant isolation, audit logging), but the project only ever uses **synthetic data** until compliance work (signed BAAs, security review, retention/deletion policy) is complete.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tech stack
 
-## Learn More
+| Layer | Choice |
+|---|---|
+| Frontend / Backend | Next.js (App Router), React, TypeScript, Tailwind CSS |
+| Auth & tenancy | Clerk (Organizations) |
+| App database | Postgres (Neon/Vercel Postgres) via Drizzle ORM |
+| Memory engine | [Cognee](https://github.com/topoteretes/cognee), self-hosted (Docker locally, GCP in production) |
+| Vector store | Postgres + pgvector |
+| Graph store | Kuzu (embedded, per-dataset isolation) |
+| LLM / OCR | Google Gemini API |
+| Hosting | Vercel |
+| Observability | Sentry |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Getting started
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+git clone https://github.com/Naazimsnh02/Anamnesis.git
+cd Anamnesis
+npm install
+```
 
-## Deploy on Vercel
+Set up the local Cognee stack's env file (LLM/embedding keys, JWT secret):
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+cp .env.example .env
+# fill in the values
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Bring up the local Cognee stack:
+
+```bash
+docker compose up -d
+```
+
+Set up your environment (Clerk keys, Postgres connection string, Cognee URL/key, Gemini key):
+
+```bash
+cp .env.local.example .env.local
+# fill in the values
+```
+
+Push the database schema and start the dev server:
+
+```bash
+npm run db:push
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+### Useful scripts
+
+```bash
+npm run test        # run the test suite (Vitest)
+npm run lint         # lint
+npm run build        # production build
+npm run db:studio    # Drizzle Studio for the Postgres schema
+```
+
+---
+
+## Hackathon
+
+Built for **[The Hangover Part AI: Where's My Context?](https://wemakedevs.org/hackathons/cognee)** (wemakedevs.org, June 29 – July 5, 2026). It was submitted to the **Best Use of Open Source** track, built entirely on self-hosted, open-source Cognee.
+
+---
+
+## License
+
+MIT
+
+---
+
+*Claude Code was used as part of the development of this project.*

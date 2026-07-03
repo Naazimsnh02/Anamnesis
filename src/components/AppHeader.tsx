@@ -9,9 +9,9 @@ import { PatientSwitcher } from "@/components/PatientSwitcher";
 import { useOpsLog } from "@/lib/opsLog";
 
 const NAV = [
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/remember", label: "Remember" },
   { href: "/assistant", label: "Assistant" },
-  { href: "/summary", label: "Summary" },
 ] as const;
 
 const clerkAppearance = {
@@ -52,7 +52,7 @@ export function AppHeader() {
     <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[var(--paper)]/95 backdrop-blur">
       <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-6">
-          <Link href="/remember" className="flex items-center gap-2" aria-label="Anamnesis, home">
+          <Link href="/dashboard" className="flex items-center gap-2" aria-label="Anamnesis, home">
             <Image
               src="/logo.png"
               alt=""
@@ -120,8 +120,8 @@ export function AppHeader() {
             </button>
             <OrganizationSwitcher
               hidePersonal
-              afterCreateOrganizationUrl="/remember"
-              afterSelectOrganizationUrl="/remember"
+              afterCreateOrganizationUrl="/dashboard"
+              afterSelectOrganizationUrl="/dashboard"
               appearance={clerkAppearance}
             />
             <UserButton appearance={clerkAppearance} />
@@ -167,8 +167,8 @@ export function AppHeader() {
             <div className="flex items-center gap-2">
               <OrganizationSwitcher
                 hidePersonal
-                afterCreateOrganizationUrl="/remember"
-                afterSelectOrganizationUrl="/remember"
+                afterCreateOrganizationUrl="/dashboard"
+                afterSelectOrganizationUrl="/dashboard"
                 appearance={clerkAppearance}
               />
               <UserButton appearance={clerkAppearance} />

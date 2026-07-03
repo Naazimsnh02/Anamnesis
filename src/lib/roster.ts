@@ -45,16 +45,22 @@ export type RosterDocument = {
   documentType: string;
   documentDate: string | null;
   narrative: string;
+  documentUrl: string | null;
 };
 
 export type Roster = {
   diagnoses: RosterDiagnosis[];
   medications: RosterMedication[];
   documents: RosterDocument[];
+  // Patient Overview fields (PRD §10) with no upstream extraction source yet
+  // — Gemini's extraction schema (src/lib/gemini.ts) doesn't pull allergies
+  // or appointments, so these are manually entered by a clinician for now.
+  allergies: string[];
+  upcomingAppointment: string | null;
 };
 
 function emptyRoster(): Roster {
-  return { diagnoses: [], medications: [] , documents: [] };
+  return { diagnoses: [], medications: [], documents: [], allergies: [], upcomingAppointment: null };
 }
 
 export async function getRoster(patientId: string): Promise<Roster> {
@@ -62,7 +68,16 @@ export async function getRoster(patientId: string): Promise<Roster> {
     const info = await head(rosterPathname(patientId));
     const res = await fetch(info.downloadUrl, { cache: "no-store" });
     if (!res.ok) return emptyRoster();
-    return (await res.json()) as Roster;
+    const stored = (await res.json()) as Partial<Roster>;
+    // Merge onto defaults — rosters saved before allergies/upcomingAppointment
+    // (or documentUrl on documents) were added won't have those fields.
+    return {
+      diagnoses: stored.diagnoses ?? [],
+      medications: stored.medications ?? [],
+      documents: (stored.documents ?? []).map((d) => ({ ...d, documentUrl: d.documentUrl ?? null })),
+      allergies: stored.allergies ?? [],
+      upcomingAppointment: stored.upcomingAppointment ?? null,
+    };
   } catch (err) {
     if (err instanceof BlobNotFoundError) return emptyRoster();
     throw err;
@@ -106,7 +121,8 @@ export function mergeEntitiesIntoRoster(
   roster: Roster,
   entities: ExtractedEntities,
   dataId: string,
-  narrative: string
+  narrative: string,
+  documentUrl: string | null = null
 ): Roster {
   const diagnoses = [...roster.diagnoses];
   for (const dx of entities.diagnoses) {
@@ -166,7 +182,27 @@ export function mergeEntitiesIntoRoster(
   const documents = roster.documents.filter(
     (d) => !(d.documentType === entities.documentType && d.documentDate === entities.documentDate)
   );
-  documents.push({ dataId, documentType: entities.documentType, documentDate: entities.documentDate, narrative });
+  documents.push({
+    dataId,
+    documentType: entities.documentType,
+    documentDate: entities.documentDate,
+    narrative,
+    documentUrl,
+  });
 
-  return { diagnoses, medications, documents };
+  return { ...roster, diagnoses, medications, documents };
+}
+
+// Patient Overview edits (allergies, upcoming appointment) — manually entered
+// by a clinician, not derived from document extraction.
+export function updateRosterOverview(
+  roster: Roster,
+  updates: { allergies?: string[]; upcomingAppointment?: string | null }
+): Roster {
+  return {
+    ...roster,
+    allergies: updates.allergies ?? roster.allergies,
+    upcomingAppointment:
+      updates.upcomingAppointment !== undefined ? updates.upcomingAppointment : roster.upcomingAppointment,
+  };
 }

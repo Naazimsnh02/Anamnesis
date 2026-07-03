@@ -105,12 +105,12 @@ export function Problem() {
       <div className="wrap relative z-10">
         <Reveal>
           <p className="eyebrow">The problem</p>
-          <h2 className="display d-xl mt-5 max-w-[16ch]">
+          <h2 className="display d-xl mt-5">
             History arrives in <em>fragments.</em>
           </h2>
-          <p className="lede mt-6 max-w-[58ch]">
-            A single patient&apos;s story is split across seven systems that never speak.
-            Every consultation begins by reconstructing it from scratch — so clinicians
+          <p className="lede mt-6">
+            A single patient's story is split across seven systems that never speak.
+            Every consultation begins by reconstructing it from scratch, so clinicians
             spend their time searching instead of diagnosing.
           </p>
         </Reveal>
@@ -170,7 +170,7 @@ export function Problem() {
           className="mt-14 border-t pt-6"
           style={{ borderColor: "var(--line)" }}
         >
-          <p className="max-w-[52ch] text-[0.95rem]" style={{ color: "var(--ink-soft)" }}>
+          <p className="text-[0.95rem]" style={{ color: "var(--ink-soft)" }}>
             Traditional EHRs store these documents. None of them connect years of
             events into something that means anything.
           </p>
@@ -188,7 +188,7 @@ export function Features() {
       <div className="wrap">
         <Reveal>
           <p className="eyebrow">What you get</p>
-          <h2 className="display d-xl mt-5 max-w-[18ch]">
+          <h2 className="display d-xl mt-5">
             One memory, seen from every angle
           </h2>
         </Reveal>
@@ -231,7 +231,7 @@ export function How() {
       <div className="wrap">
         <Reveal>
           <p className="eyebrow">How it works</p>
-          <h2 className="display d-xl mt-5 max-w-[16ch]">
+          <h2 className="display d-xl mt-5">
             From a stack of paper to a living record
           </h2>
         </Reveal>
@@ -270,8 +270,8 @@ export function Advantages() {
     <section className="section">
       <div className="wrap">
         <Reveal>
-          <p className="eyebrow">Why it&apos;s different</p>
-          <h2 className="display d-xl mt-5 max-w-[36ch]">
+          <p className="eyebrow">Why it's different</p>
+          <h2 className="display d-xl mt-5">
             Most clinical AI reads documents. Anamnesis <em>remembers</em> the patient.
           </h2>
         </Reveal>
@@ -310,7 +310,7 @@ export function Roadmap() {
       <div className="wrap">
         <Reveal>
           <p className="eyebrow">Roadmap</p>
-          <h2 className="display d-xl mt-5 max-w-[16ch]">Where the memory goes next</h2>
+          <h2 className="display d-xl mt-5">Where the memory goes next</h2>
         </Reveal>
 
         <div className="mt-14">

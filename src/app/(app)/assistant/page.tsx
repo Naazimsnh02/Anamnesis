@@ -97,10 +97,10 @@ export default function AssistantPage() {
           <h1 className="display d-lg mt-2 text-[var(--ink)]">
             Ask <em>{activePatient?.name ?? "your patient"}&apos;s</em> memory
           </h1>
-          <p className="lede mt-3 max-w-xl">
-            Every question searches the patient&apos;s connected memory — traversing the graph
-            and reasoning over what it finds — and returns an answer with a traceable
-            evidence chain, not a document search result.
+          <p className="lede mt-3">
+            Every question searches the patient's connected memory by traversing the graph
+            and reasoning over what it finds, returning an answer with a traceable
+            evidence chain rather than a document search result.
           </p>
         </div>
 

@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       const items = (body as { items?: { id?: string }[] } | null)?.items;
       const dataId = items?.[0]?.id;
       if (dataId) {
-        updatedRoster = mergeEntitiesIntoRoster(roster, entities, dataId, narrative);
+        updatedRoster = mergeEntitiesIntoRoster(roster, entities, dataId, narrative, documentUrl);
         await saveRoster(patient.id, updatedRoster);
       }
     }
