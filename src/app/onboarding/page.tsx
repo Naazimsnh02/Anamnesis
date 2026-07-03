@@ -11,12 +11,12 @@ export default async function OnboardingPage() {
   if (orgId) redirect("/remember");
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6 py-16">
+    <main className="min-h-screen flex items-center justify-center bg-[var(--paper)] px-6 py-16">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <p className="eyebrow mb-2">Anamnesis</p>
-          <h1 className="text-2xl font-medium">Set up your clinic</h1>
-          <p className="mt-2 text-sm text-black/60">
+          <h1 className="display d-md text-[var(--ink)]">Set up your clinic</h1>
+          <p className="lede mt-3 text-sm">
             Create a clinic workspace, or accept an invite if a colleague already set one up.
           </p>
         </div>
@@ -24,7 +24,17 @@ export default async function OnboardingPage() {
           hidePersonal
           afterCreateOrganizationUrl="/remember"
           afterSelectOrganizationUrl="/remember"
+          appearance={{
+            variables: {
+              colorPrimary: "var(--pen)",
+              fontFamily: "var(--font-sans)",
+              borderRadius: "12px",
+            },
+          }}
         />
+        <p className="mono mt-6 text-center text-xs text-[var(--ink-faint)]">
+          Once your clinic is set up, invite colleagues anytime from the header menu.
+        </p>
       </div>
     </main>
   );

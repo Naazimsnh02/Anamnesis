@@ -75,7 +75,7 @@ export function Nav() {
             </SignUpButton>
           </Show>
           <Show when="signed-in">
-            <a href="/debug" className="btn btn-ghost hidden sm:inline-flex">
+            <a href="/remember" className="btn btn-ghost hidden sm:inline-flex">
               Open app
             </a>
             <UserButton />

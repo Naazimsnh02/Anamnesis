@@ -16,11 +16,19 @@ Tracks progress against `Docs/Implementation-Plan.md`. Add a dated entry every t
 | 5 — Multi-Tenant Foundation | **Complete** |
 | 6 — Reliability & Security Hardening | In progress (tests, error handling, rate limiting, observability done; backups + GitHub push/CI deferred) |
 | 7 — Compliance Groundwork | Not started |
-| 8 — Product Polish | Not started |
+| 8 — Product Polish | In progress (unified shell, design system consistency, global ops panel, onboarding/invite polish done; mobile pass, README rewrite, demo video deferred) |
 
 ---
 
 ## Log
+
+### 2026-07-03 — Phase 8: unified shell, design system consistency, global ops panel, onboarding polish
+- **Global ops log**: `src/lib/opsLog.tsx` — React Context (`OpsLogProvider`/`useOpsLog()`) replacing the three separate per-page `log` states in `remember/assistant/summary`. Lives in the new `src/components/AppShell.tsx`, which wraps `(app)/layout.tsx`'s children — since Next keeps the `(app)` layout mounted across client-side navigation between `/remember`, `/assistant`, `/summary`, the Cognee operations trail (remember/recall/improve/forget/seed) now persists across pages instead of resetting per page. Rendered via `src/components/OpsLogPanel.tsx`, a slide-in drawer toggled from the header, color-coded per op (pen for remember/improve, ink for recall, ember for forget, matching the brand's "ember = active/recalled" rule).
+- **Design system consistency**: `AppHeader.tsx` and `PatientSwitcher.tsx` were still raw default Tailwind (`border-black/10`, `text-black/60`) despite every page already using the token system — rebuilt both against `.mono`/`.display`/`var(--pen)`/`var(--line)` etc., reusing the landing page's wordmark pattern (`Nav.tsx`). Added active-route highlighting and a mobile nav dropdown (header didn't have one before). Clerk's `OrganizationSwitcher`/`UserButton`/`OrganizationList` got an `appearance` prop so the widgets match the palette instead of Clerk defaults.
+- Removed the redundant hand-rolled cross-page links (`← Back to site`, `Patient summary →`, etc.) from each page's header now that the shared nav covers it.
+- **Onboarding/invite polish**: restyled `onboarding/page.tsx` with tokens; added an "invite" button in the header (`useClerk().openOrganizationProfile()`) as the durable entry point for adding clinicians, since Clerk's `afterCreateOrganizationUrl` redirects immediately on org creation with no natural mid-onboarding invite step.
+- Deferred per user decision: mobile audit of existing page content (item 5), README rewrite (item 6), recorded demo walkthrough (item 7 — needs a human to actually record).
+- `npm run lint`/`build`/`test` all clean (102 tests passing).
 
 ### 2026-07-02 (17) — Phase 6: tests, error handling, rate limiting, observability
 - **Test suite**: installed Vitest (`vitest.config.ts`, `npm test`/`npm run test:watch`). Unit tests for `src/lib/evidence.ts`, `src/lib/narrative.ts`, `src/lib/roster.ts`, and `src/lib/db/queries.ts` (mocking Clerk/`next/headers`/Drizzle). Contract tests for all 12 route handlers under `src/app/api/**` against a mocked Cognee client, covering success paths, validation 400s, `NoPatientsError`→409, and generic 500s. 102 tests total, all passing; `npm run build`/`lint`/`test` all clean.

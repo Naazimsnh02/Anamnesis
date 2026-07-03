@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { AppHeader } from "@/components/AppHeader";
+import { AppShell } from "@/components/AppShell";
 import { requireOrgContext } from "@/lib/db/queries";
 
 // Shared gate for every org-scoped app page (/remember, /assistant,
@@ -15,10 +15,5 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   await requireOrgContext();
 
-  return (
-    <div className="min-h-screen">
-      <AppHeader />
-      {children}
-    </div>
-  );
+  return <AppShell>{children}</AppShell>;
 }

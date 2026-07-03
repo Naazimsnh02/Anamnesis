@@ -128,11 +128,11 @@ Exit criteria: a written, accurate compliance gap analysis exists, and nothing i
 
 Goal: the app reads as one coherent product, not four separately-built pages.
 
-- [ ] Unified dashboard shell (persistent nav/sidebar, patient header) wrapping `/remember`, `/assistant`, `/summary`, graph view
-- [ ] Consistent design system usage across all app pages (reuse the landing page's tokens, not default Tailwind)
-- [ ] Global, persistent Cognee operations panel — consolidates the current per-page logs into one place showing remember/recall/improve/forget across the whole session; this is the primary "prove we used Cognee deeply" surface
-- [ ] Onboarding flow: org signup → invite clinicians → add patients (replaces the single seed-button flow)
-- [ ] Mobile pass
+- [x] Unified dashboard shell (persistent nav/sidebar, patient header) wrapping `/remember`, `/assistant`, `/summary`, graph view — `src/components/AppShell.tsx`, swapped into `(app)/layout.tsx`
+- [x] Consistent design system usage across all app pages (reuse the landing page's tokens, not default Tailwind) — `AppHeader.tsx` and `PatientSwitcher.tsx` rebuilt against the token system (were raw Tailwind), matching the rest of the app
+- [x] Global, persistent Cognee operations panel — consolidates the current per-page logs into one place showing remember/recall/improve/forget across the whole session; this is the primary "prove we used Cognee deeply" surface — `src/lib/opsLog.tsx` (Context) + `src/components/OpsLogPanel.tsx`, persists across client-side nav between app pages
+- [x] Onboarding flow polish: restyled `onboarding/page.tsx` with design tokens; added an in-header "invite" entry point (`useClerk().openOrganizationProfile()`) since Clerk's org-creation redirect leaves no natural mid-onboarding invite step — patient-adding already covered by the existing `/remember` empty-state CTA
+- [ ] Mobile pass — deferred; new shell/header/ops-panel components are responsive down to mobile, but a full audit of existing page content is not done
 - [ ] README: problem, solution, architecture diagram, why self-hosted Cognee (data sovereignty angle), compliance posture, how to run locally
 - [ ] Rehearse the full demo flow (PRD §13) end-to-end against the new multi-patient surface; record a walkthrough video
 

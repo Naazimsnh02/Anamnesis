@@ -3,25 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Roster } from "@/lib/roster";
+import { useOpsLog } from "@/lib/opsLog";
 
 type RosterResponse = Roster & { patient: { id: string; name: string } };
 
-type LogEntry = {
-  time: string;
-  op: "forget" | "improve";
-  label: string;
-  status: number;
-  detail: string;
-};
-
-function pushLog(setLog: (fn: (prev: LogEntry[]) => LogEntry[]) => void, entry: LogEntry) {
-  setLog((prev) => [entry, ...prev]);
-}
-
 export default function SummaryPage() {
+  const { logOp } = useOpsLog();
   const [roster, setRoster] = useState<RosterResponse | null>(null);
   const [noPatients, setNoPatients] = useState(false);
-  const [log, setLog] = useState<LogEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -67,8 +56,7 @@ export default function SummaryPage() {
       if (!res.ok) throw new Error(data.error || `Status update failed (HTTP ${res.status})`);
 
       setRoster((prev) => (prev ? { ...(data.roster as Roster), patient: prev.patient } : prev));
-      pushLog(setLog, {
-        time: new Date().toLocaleTimeString(),
+      logOp({
         op: "improve",
         label: `remember() correction + improve() — ${
           entityType === "diagnosis" ? "ruled out" : "discontinued"
@@ -89,23 +77,9 @@ export default function SummaryPage() {
   const discontinuedMeds = roster?.medications.filter((m) => m.status === "discontinued") ?? [];
 
   return (
-    <div className="min-h-screen bg-[var(--paper)]">
-      <main className="wrap flex max-w-4xl flex-col gap-10 py-16">
+    <main className="wrap flex max-w-4xl flex-col gap-10 py-16">
         <div>
-          <div className="flex items-center justify-between">
-            <Link href="/" className="mono text-sm text-[var(--ink-soft)] hover:text-[var(--ink)]">
-              ← Back to site
-            </Link>
-            <div className="flex gap-4">
-              <Link href="/remember" className="mono text-sm text-[var(--ink-soft)] hover:text-[var(--ink)]">
-                remember() →
-              </Link>
-              <Link href="/assistant" className="mono text-sm text-[var(--ink-soft)] hover:text-[var(--ink)]">
-                Ask the memory →
-              </Link>
-            </div>
-          </div>
-          <p className="eyebrow mt-4">forget()</p>
+          <p className="eyebrow">forget()</p>
           <h1 className="display d-lg mt-2 text-[var(--ink)]">
             <em>{roster?.patient.name ?? "your patient's"}</em> current summary
           </h1>
@@ -250,29 +224,6 @@ export default function SummaryPage() {
         </section>
         </>
         )}
-
-        <section>
-          <h2 className="mono mb-3 text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
-            Cognee operations log
-          </h2>
-          <div className="flex flex-col gap-2">
-            {log.length === 0 && (
-              <p className="text-sm text-[var(--ink-faint)]">No calls made yet.</p>
-            )}
-            {log.map((entry, i) => (
-              <div key={i} className="card mono p-3 text-xs">
-                <div className="flex justify-between text-[var(--ink-soft)]">
-                  <span>
-                    [{entry.time}] {entry.op}() — HTTP {entry.status}
-                  </span>
-                </div>
-                <div className="mt-1 text-[var(--ink)]">→ {entry.label}</div>
-                <div className="mt-1 break-all text-[var(--ink-faint)]">{entry.detail}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-    </div>
+    </main>
   );
 }

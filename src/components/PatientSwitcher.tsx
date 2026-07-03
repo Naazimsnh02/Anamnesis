@@ -53,7 +53,7 @@ export function PatientSwitcher() {
         value={activePatientId ?? ""}
         disabled={loading || patients.length === 0}
         onChange={(e) => switchPatient(e.target.value)}
-        className="rounded border border-black/15 bg-white px-2 py-1.5 text-sm"
+        className="mono rounded-full border border-[var(--line)] bg-transparent px-3 py-1.5 text-xs text-[var(--ink)]"
       >
         {patients.length === 0 && <option value="">No patients yet</option>}
         {patients.map((p) => (
@@ -66,7 +66,7 @@ export function PatientSwitcher() {
       {!adding ? (
         <button
           onClick={() => setAdding(true)}
-          className="mono text-xs text-[var(--pen,#0a5)] underline"
+          className="mono text-xs text-[var(--pen)] hover:underline"
         >
           + add patient
         </button>
@@ -76,18 +76,18 @@ export function PatientSwitcher() {
             placeholder="Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-28 rounded border border-black/15 px-2 py-1 text-xs"
+            className="w-28 rounded border border-[var(--line)] bg-transparent px-2 py-1 text-xs text-[var(--ink)]"
           />
           <input
             type="date"
             value={dob}
             onChange={(e) => setDob(e.target.value)}
-            className="rounded border border-black/15 px-2 py-1 text-xs"
+            className="rounded border border-[var(--line)] bg-transparent px-2 py-1 text-xs text-[var(--ink)]"
           />
-          <button type="submit" disabled={busy} className="mono text-xs underline">
+          <button type="submit" disabled={busy} className="mono text-xs text-[var(--pen)] hover:underline">
             add
           </button>
-          <button type="button" onClick={() => setAdding(false)} className="text-xs text-black/40">
+          <button type="button" onClick={() => setAdding(false)} className="mono text-xs text-[var(--ink-faint)]">
             cancel
           </button>
         </form>
@@ -97,13 +97,17 @@ export function PatientSwitcher() {
         <button
           onClick={handleSeedDemo}
           disabled={busy}
-          className="mono text-xs text-[var(--pen,#0a5)] underline"
+          className="mono text-xs text-[var(--pen)] hover:underline"
         >
           {busy ? "seeding…" : "seed demo patients"}
         </button>
       )}
 
-      <button onClick={() => refresh()} className="text-xs text-black/30 hover:text-black/60" title="Refresh patient list">
+      <button
+        onClick={() => refresh()}
+        className="text-xs text-[var(--ink-faint)] hover:text-[var(--ink)]"
+        title="Refresh patient list"
+      >
         ⟳
       </button>
     </div>

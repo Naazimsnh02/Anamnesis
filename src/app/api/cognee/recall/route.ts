@@ -15,7 +15,26 @@ export async function POST(request: Request) {
     const { status, body } = await cogneeRecall(query, patient.datasetName, { includeReferences: true });
 
     if (status >= 400) {
-      return Response.json({ error: "Recall failed", cognee: body }, { status });
+      // Cognee 404s a dataset that has never had remember()/cognify() run on
+      // it (a patient with zero uploaded/seeded documents) with this exact
+      // message — surface it as an actionable prompt instead of a bare
+      // "Recall failed", since it's an expected state, not a real failure.
+      const isEmptyMemory =
+        status === 404 &&
+        typeof body === "object" &&
+        body !== null &&
+        "error" in body &&
+        body.error === "Recall prerequisites not met";
+      return Response.json(
+        {
+          error: isEmptyMemory
+            ? `${patient.name} doesn't have any remembered documents yet — upload or seed one from remember() first.`
+            : "Recall failed",
+          emptyMemory: isEmptyMemory,
+          cognee: body,
+        },
+        { status }
+      );
     }
 
     const parsed = parseRecallResponse(body);

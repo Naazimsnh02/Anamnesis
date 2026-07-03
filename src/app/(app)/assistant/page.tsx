@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useActivePatient } from "@/lib/useActivePatient";
+import { useOpsLog } from "@/lib/opsLog";
 
 const SAMPLE_QUESTIONS = [
   "Why is kidney function declining?",
@@ -29,22 +30,15 @@ type Turn = {
   evidence: EvidenceItem[];
   source: string | null;
   error?: string;
-};
-
-type LogEntry = {
-  time: string;
-  op: "recall";
-  label: string;
-  status: number;
-  detail: string;
+  emptyMemory?: boolean;
 };
 
 export default function AssistantPage() {
   const { activePatient } = useActivePatient();
+  const { logOp } = useOpsLog();
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
-  const [log, setLog] = useState<LogEntry[]>([]);
 
   async function ask(q: string) {
     const trimmed = q.trim();
@@ -72,49 +66,34 @@ export default function AssistantPage() {
             evidence: [],
             source: null,
             error: data.error || `Recall failed (HTTP ${res.status})`,
+            emptyMemory: Boolean(data.emptyMemory),
           };
 
       setTurns((prev) => [turn, ...prev]);
-      setLog((prev) => [
-        {
-          time: new Date().toLocaleTimeString(),
-          op: "recall",
-          label: trimmed,
-          status: res.status,
-          detail: res.ok
-            ? `${data.evidence?.length ?? 0} evidence chunk(s) · source: ${data.source ?? "?"}`
-            : turn.error!,
-        },
-        ...prev,
-      ]);
+      logOp({
+        op: "recall",
+        label: trimmed,
+        status: res.status,
+        detail: res.ok
+          ? `${data.evidence?.length ?? 0} evidence chunk(s) · source: ${data.source ?? "?"}`
+          : turn.error!,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Network error";
       setTurns((prev) => [
         { question: trimmed, answer: "", evidence: [], source: null, error: message },
         ...prev,
       ]);
-      setLog((prev) => [
-        { time: new Date().toLocaleTimeString(), op: "recall", label: trimmed, status: 0, detail: message },
-        ...prev,
-      ]);
+      logOp({ op: "recall", label: trimmed, status: 0, detail: message });
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[var(--paper)]">
-      <main className="wrap flex max-w-4xl flex-col gap-10 py-16">
+    <main className="wrap flex max-w-4xl flex-col gap-10 py-16">
         <div>
-          <div className="flex items-center justify-between">
-            <Link href="/" className="mono text-sm text-[var(--ink-soft)] hover:text-[var(--ink)]">
-              ← Back to site
-            </Link>
-            <Link href="/remember" className="mono text-sm text-[var(--ink-soft)] hover:text-[var(--ink)]">
-              ← Grow the memory
-            </Link>
-          </div>
-          <p className="eyebrow mt-4">recall()</p>
+          <p className="eyebrow">recall()</p>
           <h1 className="display d-lg mt-2 text-[var(--ink)]">
             Ask <em>{activePatient?.name ?? "your patient"}&apos;s</em> memory
           </h1>
@@ -179,7 +158,16 @@ export default function AssistantPage() {
               <div key={i} className="card p-5">
                 <p className="mono text-sm text-[var(--pen)]">Q: {t.question}</p>
                 {t.error ? (
-                  <p className="mt-3 text-sm text-red-600">{t.error}</p>
+                  t.emptyMemory ? (
+                    <p className="mt-3 text-sm text-[var(--ink-soft)]">
+                      {t.error}{" "}
+                      <Link href="/remember" className="text-[var(--pen)] underline">
+                        Go to remember()
+                      </Link>
+                    </p>
+                  ) : (
+                    <p className="mt-3 text-sm text-red-600">{t.error}</p>
+                  )
                 ) : (
                   <>
                     <p className="mt-3 text-[var(--ink)]">{t.answer}</p>
@@ -219,29 +207,6 @@ export default function AssistantPage() {
             ))}
           </section>
         )}
-
-        <section>
-          <h2 className="mono mb-3 text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
-            Cognee operations log
-          </h2>
-          <div className="flex flex-col gap-2">
-            {log.length === 0 && (
-              <p className="text-sm text-[var(--ink-faint)]">No calls made yet.</p>
-            )}
-            {log.map((entry, i) => (
-              <div key={i} className="card mono p-3 text-xs">
-                <div className="flex justify-between text-[var(--ink-soft)]">
-                  <span>
-                    [{entry.time}] {entry.op}() — HTTP {entry.status}
-                  </span>
-                </div>
-                <div className="mt-1 text-[var(--ink)]">→ {entry.label}</div>
-                <div className="mt-1 break-all text-[var(--ink-faint)]">{entry.detail}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-    </div>
+    </main>
   );
 }

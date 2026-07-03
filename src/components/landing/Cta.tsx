@@ -38,7 +38,7 @@ export function Cta() {
             </SignUpButton>
           </Show>
           <Show when="signed-in">
-            <Magnetic href="/debug" className="btn btn-primary">
+            <Magnetic href="/remember" className="btn btn-primary">
               Open the app
               <span aria-hidden>→</span>
             </Magnetic>
