@@ -23,3 +23,6 @@ Thumbs.db
 # Dev-only scratch script and TS build cache (not part of the shipped app)
 /scratch-e2e.mts
 tsconfig.tsbuildinfo
+
+# Claude Code local settings (machine-specific)
+.claude/

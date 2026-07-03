@@ -9,7 +9,6 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "generate:assets": "node scripts/generate-assets.mjs",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
