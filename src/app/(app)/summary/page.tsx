@@ -1,51 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import type { Roster } from "@/lib/roster";
 import { useOpsLog } from "@/lib/opsLog";
+import { FetchError } from "@/lib/swrFetcher";
 
 type RosterResponse = Roster & { patient: { id: string; name: string } };
 
 export default function SummaryPage() {
   const { logOp } = useOpsLog();
-  const [roster, setRoster] = useState<RosterResponse | null>(null);
-  const [noPatients, setNoPatients] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
 
-  async function fetchRoster() {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/documents/roster");
-      if (res.ok) {
-        setRoster(await res.json());
-        setNoPatients(false);
-      } else if (res.status === 409) {
-        setNoPatients(true);
-      } else {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Failed to load summary (HTTP ${res.status})`);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load summary");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- standard fetch-on-mount to load the current roster
-    fetchRoster();
-  }, []);
+  const {
+    data: roster,
+    error: fetchError,
+    isLoading: loading,
+    mutate: fetchRoster,
+  } = useSWR<RosterResponse>("/api/documents/roster", {
+    shouldRetryOnError: (err) => !(err instanceof FetchError && err.status === 409),
+  });
+  const noPatients = fetchError instanceof FetchError && fetchError.status === 409;
+  const error = mutationError ?? (noPatients ? null : fetchError?.message ?? null);
 
   async function markStatus(entityType: "diagnosis" | "medication", name: string) {
     const key = `${entityType}:${name}`;
     setBusyKey(key);
-    setError(null);
+    setMutationError(null);
     try {
       const res = await fetch("/api/documents/status", {
         method: "POST",
@@ -55,17 +39,20 @@ export default function SummaryPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `Status update failed (HTTP ${res.status})`);
 
-      setRoster((prev) => (prev ? { ...(data.roster as Roster), patient: prev.patient } : prev));
+      await fetchRoster(
+        (prev) => (prev ? { ...(data.roster as Roster), patient: prev.patient } : prev),
+        { revalidate: false }
+      );
       logOp({
         op: "improve",
-        label: `remember() correction + improve() — ${
+        label: `Correction recorded — ${
           entityType === "diagnosis" ? "ruled out" : "discontinued"
         }: ${name}`,
         status: data.cognee.status,
         detail: data.narrative,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setMutationError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setBusyKey(null);
     }
@@ -79,19 +66,19 @@ export default function SummaryPage() {
   return (
     <main className="wrap flex max-w-4xl flex-col gap-10 py-16">
         <div>
-          <p className="eyebrow">forget()</p>
+          <p className="eyebrow">Summary</p>
           <h1 className="display d-lg mt-2 text-[var(--ink)]">
             <em>{roster?.patient.name ?? "your patient's"}</em> current summary
           </h1>
           <p className="lede mt-3 max-w-xl">
-            Mark a diagnosis ruled out or a medication discontinued and the active summary updates
-            immediately via <span className="mono">forget()</span>-adjacent correction — nothing is
-            deleted, it moves to history below.
+            Mark a diagnosis ruled out or a medication discontinued and the active summary
+            updates immediately — the change is recorded and nothing is deleted, it moves to
+            history below.
           </p>
           {error && (
             <p className="mt-3 text-sm text-red-600">
               {error}{" "}
-              <button onClick={fetchRoster} className="underline">
+              <button onClick={() => fetchRoster()} className="underline">
                 Retry
               </button>
             </p>
@@ -103,7 +90,7 @@ export default function SummaryPage() {
             <p className="mt-3 text-sm text-[var(--ink-soft)]">
               No patients yet — add or seed one from{" "}
               <Link href="/remember" className="underline">
-                remember()
+                Remember
               </Link>
               .
             </p>
@@ -120,7 +107,7 @@ export default function SummaryPage() {
             <p className="mt-2 text-sm text-[var(--ink-faint)]">
               None yet — seed patient history or upload a document from{" "}
               <Link href="/remember" className="underline">
-                remember()
+                Remember
               </Link>
               .
             </p>

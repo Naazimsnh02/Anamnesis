@@ -10,6 +10,14 @@ const OP_COLOR: Record<OpsLogOp, string> = {
   seed: "var(--ink-faint)",
 };
 
+const OP_LABEL: Record<OpsLogOp, string> = {
+  remember: "Remembered",
+  improve: "Improved",
+  recall: "Recalled",
+  forget: "Forgotten",
+  seed: "Seeded",
+};
+
 export function OpsLogPanel() {
   const { entries, panelOpen, togglePanel } = useOpsLog();
 
@@ -29,29 +37,29 @@ export function OpsLogPanel() {
       >
         <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-4">
           <div>
-            <p className="eyebrow">Cognee operations</p>
+            <p className="eyebrow">Memory activity</p>
             <p className="mono mt-1 text-xs text-[var(--ink-faint)]">
-              {entries.length} call{entries.length === 1 ? "" : "s"} this session
+              {entries.length} update{entries.length === 1 ? "" : "s"} this session
             </p>
           </div>
           <button
             onClick={togglePanel}
             className="mono text-xs text-[var(--ink-soft)] hover:text-[var(--ink)]"
-            aria-label="Close operations panel"
+            aria-label="Close activity panel"
           >
             close ✕
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {entries.length === 0 ? (
-            <p className="text-sm text-[var(--ink-faint)]">No calls made yet.</p>
+            <p className="text-sm text-[var(--ink-faint)]">No activity yet.</p>
           ) : (
             <div className="flex flex-col gap-2">
               {entries.map((entry) => (
                 <div key={entry.id} className="card mono p-3 text-xs">
                   <div className="flex items-center justify-between text-[var(--ink-soft)]">
                     <span style={{ color: OP_COLOR[entry.op] }}>
-                      {entry.op}() — HTTP {entry.status}
+                      {OP_LABEL[entry.op]}{entry.status >= 400 ? " · failed" : ""}
                     </span>
                     <span className="text-[var(--ink-faint)]">{entry.time}</span>
                   </div>

@@ -21,8 +21,8 @@ export function Memory() {
             The lifecycle of a <em>remembered</em> patient
           </h2>
           <p className="lede mt-6 max-w-[58ch]">
-            Anamnesis is built on Cognee&apos;s four memory operations. Every one is a
-            visible call — not hidden behind the interface, but the interface itself.
+            Anamnesis is built on four memory operations. Every one is visible in the
+            product — not hidden behind the interface, but the interface itself.
           </p>
         </Reveal>
 
@@ -58,7 +58,6 @@ export function Memory() {
                     }}
                   >
                     {o.verb}
-                    <span style={{ color: "var(--pen-2)" }}>()</span>
                   </span>
                   {on && (
                     <motion.span

@@ -117,7 +117,7 @@ body {
 
 .section {
   position: relative;
-  padding-block: clamp(5rem, 11vw, 9rem);
+  padding-block: clamp(3.25rem, 6.5vw, 6rem);
 }
 .wrap {
   width: 100%;
@@ -152,6 +152,11 @@ body {
   .spine {
     display: none;
   }
+}
+
+/* recessed panel — subtle tonal break between flat-paper sections */
+.section-alt {
+  background: var(--paper-2);
 }
 
 /* dark surface */

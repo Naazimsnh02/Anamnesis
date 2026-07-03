@@ -93,14 +93,14 @@ export default function AssistantPage() {
   return (
     <main className="wrap flex max-w-4xl flex-col gap-10 py-16">
         <div>
-          <p className="eyebrow">recall()</p>
+          <p className="eyebrow">Recall</p>
           <h1 className="display d-lg mt-2 text-[var(--ink)]">
             Ask <em>{activePatient?.name ?? "your patient"}&apos;s</em> memory
           </h1>
           <p className="lede mt-3 max-w-xl">
-            Every question runs through Cognee&apos;s <span className="mono">recall()</span> —
-            graph traversal plus reasoning over the patient&apos;s connected memory — and returns
-            an answer with a traceable evidence chain, not a document search result.
+            Every question searches the patient&apos;s connected memory — traversing the graph
+            and reasoning over what it finds — and returns an answer with a traceable
+            evidence chain, not a document search result.
           </p>
         </div>
 
@@ -162,7 +162,7 @@ export default function AssistantPage() {
                     <p className="mt-3 text-sm text-[var(--ink-soft)]">
                       {t.error}{" "}
                       <Link href="/remember" className="text-[var(--pen)] underline">
-                        Go to remember()
+                        Go to Remember
                       </Link>
                     </p>
                   ) : (

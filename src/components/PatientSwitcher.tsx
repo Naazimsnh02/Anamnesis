@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useActivePatient } from "@/lib/useActivePatient";
 
 export function PatientSwitcher() {
-  const { patients, activePatientId, loading, error, switchPatient, refresh } = useActivePatient();
+  const { patients, activePatientId, loading, error, switchPatient, refresh, refreshAll } =
+    useActivePatient();
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [dob, setDob] = useState("");
@@ -36,8 +37,8 @@ export function PatientSwitcher() {
     setBusy(true);
     try {
       await fetch("/api/patients/seed-demo", { method: "POST" });
-      window.location.reload();
-    } catch {
+      await refreshAll();
+    } finally {
       setBusy(false);
     }
   }

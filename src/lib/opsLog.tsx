@@ -24,7 +24,7 @@ type OpsLogContextValue = {
 
 const OpsLogContext = createContext<OpsLogContextValue | null>(null);
 
-// Lives in AppShell.tsx, above every (app) page, so the Cognee operations
+// Lives in AppShell.tsx, above every (app) page, so the memory activity
 // trail persists across client-side navigation between /remember, /assistant,
 // and /summary instead of resetting per page — the primary "prove we used
 // Cognee deeply" surface per CLAUDE.md.

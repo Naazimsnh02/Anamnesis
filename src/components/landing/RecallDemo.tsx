@@ -61,7 +61,7 @@ export function RecallDemo() {
   }
 
   return (
-    <section id="recall-demo" className="section">
+    <section id="recall-demo" className="section section-alt">
       <div className="wrap">
         <Reveal>
           <p className="eyebrow">Recall, live</p>
@@ -100,7 +100,7 @@ export function RecallDemo() {
                   </button>
                 ))}
                 <p className="mt-2 text-[0.8rem]" style={{ color: "var(--ink-faint)" }}>
-                  A demonstration on synthetic data. No real patient information.
+                  A demonstration using a sample patient record.
                 </p>
               </div>
 
@@ -113,7 +113,7 @@ export function RecallDemo() {
                       style={{ fontSize: "0.78rem", color: "var(--pen)" }}
                     >
                       <span className="inline-block h-2 w-2 rounded-full" style={{ background: "var(--ember)" }} />
-                      recall() ready
+                      Ready to recall
                     </span>
                     <p className="lede mt-4">Select a question to traverse the memory graph.</p>
                   </div>

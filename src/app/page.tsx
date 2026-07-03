@@ -16,7 +16,6 @@ import { Footer } from "@/components/landing/Footer";
 
 export default function Home() {
   const heroArt = generatedAsset("hero");
-  const dividerArt = generatedAsset("divider");
 
   return (
     <>
@@ -24,7 +23,7 @@ export default function Home() {
       <Nav />
       <main>
         <Hero art={heroArt} />
-        <Problem art={dividerArt} />
+        <Problem />
         <Memory />
         <RecallDemo />
         <Features />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import useSWR, { useSWRConfig } from "swr";
 
 export type PatientSummary = {
   id: string;
@@ -9,35 +9,25 @@ export type PatientSummary = {
   datasetName: string;
 };
 
+type PatientsResponse = {
+  patients: PatientSummary[];
+  activePatientId: string | null;
+};
+
 export function useActivePatient() {
-  const [patients, setPatients] = useState<PatientSummary[]>([]);
-  const [activePatientId, setActivePatientId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { mutate: globalMutate } = useSWRConfig();
+  const { data, error, isLoading, mutate } = useSWR<PatientsResponse>("/api/patients");
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/patients");
-      const data = await res.json();
-      if (res.ok) {
-        setPatients(data.patients ?? []);
-        setActivePatientId(data.activePatientId ?? null);
-      } else {
-        setError(data.error || `Failed to load patients (HTTP ${res.status})`);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load patients");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const patients = data?.patients ?? [];
+  const activePatientId = data?.activePatientId ?? null;
+  const activePatient = patients.find((p) => p.id === activePatientId) ?? null;
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- standard fetch-on-mount
-    refresh();
-  }, [refresh]);
+  // Revalidates every SWR key currently in the cache — used after any action
+  // that changes which patient is active (switch, add, seed), since graph,
+  // roster, etc. are all scoped to the active patient server-side (cookie).
+  async function refreshAll() {
+    await globalMutate(() => true);
+  }
 
   async function switchPatient(patientId: string) {
     const res = await fetch("/api/patients/active", {
@@ -46,18 +36,19 @@ export function useActivePatient() {
       body: JSON.stringify({ patientId }),
     });
     if (res.ok) {
-      // Every app page resolves the active patient server-side per request
-      // (cookie), and each page's own data (uploads, recall history, roster)
-      // is client-fetched on mount with no cross-page shared state — a full
-      // reload is the simplest way to guarantee everything re-resolves
-      // against the newly selected patient, and switching patients is rare
-      // enough that this doesn't need to be instant.
-      window.location.reload();
+      await refreshAll();
     }
     return res.ok;
   }
 
-  const activePatient = patients.find((p) => p.id === activePatientId) ?? null;
-
-  return { patients, activePatientId, activePatient, loading, error, refresh, switchPatient };
+  return {
+    patients,
+    activePatientId,
+    activePatient,
+    loading: isLoading,
+    error: error ? error.message : null,
+    refresh: () => mutate(),
+    refreshAll,
+    switchPatient,
+  };
 }

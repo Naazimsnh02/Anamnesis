@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { OrganizationSwitcher, UserButton, useClerk } from "@clerk/nextjs";
@@ -16,8 +17,28 @@ const NAV = [
 const clerkAppearance = {
   variables: {
     colorPrimary: "var(--pen)",
+    colorText: "var(--ink)",
+    colorTextSecondary: "var(--ink-soft)",
+    colorBackground: "var(--paper)",
+    colorInputBackground: "var(--paper-2)",
+    colorInputText: "var(--ink)",
+    colorNeutral: "var(--ink)",
     fontFamily: "var(--font-sans)",
-    borderRadius: "999px",
+    borderRadius: "0.65rem",
+  },
+  elements: {
+    card: "border border-[var(--line)] shadow-lg rounded-xl",
+    popoverBox: "border border-[var(--line)] shadow-lg rounded-xl",
+    popoverMain: "rounded-xl",
+    userButtonPopoverCard: "border border-[var(--line)] shadow-lg rounded-xl",
+    organizationSwitcherPopoverCard: "border border-[var(--line)] shadow-lg rounded-xl",
+    organizationPreviewMainIdentifier: "text-[var(--ink)]",
+    organizationSwitcherTriggerIcon: "text-[var(--ink-soft)]",
+    userPreviewMainIdentifier: "text-[var(--ink)]",
+    userPreviewSecondaryIdentifier: "text-[var(--ink-soft)]",
+    button: "rounded-md",
+    formButtonPrimary: "rounded-full",
+    avatarBox: "rounded-full",
   },
 };
 
@@ -31,7 +52,15 @@ export function AppHeader() {
     <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[var(--paper)]/95 backdrop-blur">
       <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-6">
-          <Link href="/remember" className="flex items-baseline gap-2" aria-label="Anamnesis, home">
+          <Link href="/remember" className="flex items-center gap-2" aria-label="Anamnesis, home">
+            <Image
+              src="/logo.png"
+              alt=""
+              width={24}
+              height={24}
+              className="h-6 w-6 shrink-0 rounded-md mix-blend-multiply"
+              priority
+            />
             <span className="display text-[1.25rem] leading-none" style={{ letterSpacing: "-0.02em" }}>
               Anamnesis
             </span>
@@ -71,7 +100,7 @@ export function AppHeader() {
             onClick={togglePanel}
             className="mono flex items-center gap-1.5 rounded-full border border-[var(--line)] px-3 py-1.5 text-xs text-[var(--ink-soft)] transition hover:border-[var(--pen)] hover:text-[var(--ink)]"
           >
-            ops
+            activity
             <span
               className="rounded-full px-1.5 text-[0.65rem]"
               style={{ background: "var(--paper-2)", color: "var(--ink)" }}

@@ -1,10 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import type { ExtractedEntities } from "@/lib/gemini";
 import { GraphView, type GraphEdge, type GraphNode } from "@/components/GraphView";
 import { useActivePatient } from "@/lib/useActivePatient";
 import { useOpsLog } from "@/lib/opsLog";
+
+type GraphResponse = { nodes: GraphNode[]; edges: GraphEdge[] };
 
 const DOCUMENT_TYPES = [
   { value: "blood_report", label: "Blood report" },
@@ -24,7 +27,7 @@ type UploadResult = {
 };
 
 export default function RememberPage() {
-  const { activePatient, patients, loading: patientsLoading } = useActivePatient();
+  const { activePatient, patients, loading: patientsLoading, refreshAll } = useActivePatient();
   const { logOp } = useOpsLog();
   const [documentType, setDocumentType] = useState<(typeof DOCUMENT_TYPES)[number]["value"]>(
     "blood_report"
@@ -33,29 +36,14 @@ export default function RememberPage() {
   const [busy, setBusy] = useState<"upload" | "seed" | null>(null);
   const [results, setResults] = useState<UploadResult[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
-  const [graphEdges, setGraphEdges] = useState<GraphEdge[]>([]);
-  const [graphLoading, setGraphLoading] = useState(false);
 
-  const fetchGraph = useCallback(async () => {
-    if (!activePatient) return;
-    setGraphLoading(true);
-    try {
-      const res = await fetch("/api/cognee/graph");
-      const data = await res.json();
-      if (res.ok) {
-        setGraphNodes(data.nodes ?? []);
-        setGraphEdges(data.edges ?? []);
-      }
-    } finally {
-      setGraphLoading(false);
-    }
-  }, [activePatient]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- standard fetch-on-mount to load the current graph
-    fetchGraph();
-  }, [fetchGraph]);
+  const {
+    data: graph,
+    isLoading: graphLoading,
+    mutate: fetchGraph,
+  } = useSWR<GraphResponse>(activePatient ? "/api/cognee/graph" : null);
+  const graphNodes = graph?.nodes ?? [];
+  const graphEdges = graph?.edges ?? [];
 
   async function handleUpload() {
     if (!file) return;
@@ -78,7 +66,7 @@ export default function RememberPage() {
       if (result.merged && result.forget) {
         logOp({
           op: "forget",
-          label: `Duplicate detected (same type + date) — forgot the superseded document`,
+          label: `Duplicate detected (same type + date) — replaced the superseded document`,
           status: result.forget.status,
           detail: JSON.stringify(result.forget.body),
         });
@@ -92,7 +80,7 @@ export default function RememberPage() {
       if (result.improve) {
         logOp({
           op: "improve",
-          label: "Re-enriched dataset, linking new entities into prior history",
+          label: "Linked new entities into prior history",
           status: result.improve.status,
           detail: JSON.stringify(result.improve.body),
         });
@@ -126,11 +114,12 @@ export default function RememberPage() {
           .join(" — "),
       });
       // A new active patient may have just been set server-side (seed-demo
-      // sets it to the first seeded patient) — reload so the patient
-      // switcher and every other client-fetched piece of state re-resolves.
-      window.location.reload();
+      // sets it to the first seeded patient) — revalidate every cached SWR
+      // key so the patient switcher and every other page re-resolves.
+      await refreshAll();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
       setBusy(null);
     }
   }
@@ -138,14 +127,14 @@ export default function RememberPage() {
   return (
     <main className="wrap flex max-w-4xl flex-col gap-10 py-16">
         <div>
-          <p className="eyebrow">remember()</p>
+          <p className="eyebrow">Remember</p>
           <h1 className="display d-lg mt-2 text-[var(--ink)]">
             Grow <em>{activePatient?.name ?? "your patient"}&apos;s</em> memory
           </h1>
           <p className="lede mt-3 max-w-xl">
-            Upload a blood report, prescription, discharge summary, or imaging report. Gemini
-            extracts structured clinical entities, then each document is committed to the
-            patient&apos;s Cognee memory graph via <span className="mono">remember()</span>.
+            Upload a blood report, prescription, discharge summary, or imaging report.
+            Anamnesis extracts the structured clinical entities and adds them to the
+            patient&apos;s memory graph.
           </p>
         </div>
 
@@ -194,7 +183,7 @@ export default function RememberPage() {
                 disabled={!file || busy !== null}
                 className="btn btn-primary w-fit"
               >
-                {busy === "upload" ? "Extracting & remembering…" : "Upload & remember()"}
+                {busy === "upload" ? "Extracting & remembering…" : "Upload & remember"}
               </button>
             </div>
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
@@ -244,7 +233,7 @@ export default function RememberPage() {
               Memory graph — {graphNodes.length} entities, {graphEdges.length} relationships
             </h2>
             <button
-              onClick={fetchGraph}
+              onClick={() => fetchGraph()}
               disabled={graphLoading}
               className="mono text-xs text-[var(--pen)] underline disabled:opacity-50"
             >
@@ -252,8 +241,8 @@ export default function RememberPage() {
             </button>
           </div>
           <p className="mt-1 text-sm text-[var(--ink-soft)]">
-            Live view of the patient&apos;s Cognee knowledge graph. Grows every time a document is
-            remembered and improve() links it into prior history.
+            Live view of the patient&apos;s knowledge graph. Grows every time a document is
+            added and linked into prior history.
           </p>
           <div className="mt-4">
             <GraphView nodes={graphNodes} edges={graphEdges} />

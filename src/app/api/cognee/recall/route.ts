@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       return Response.json(
         {
           error: isEmptyMemory
-            ? `${patient.name} doesn't have any remembered documents yet — upload or seed one from remember() first.`
+            ? `${patient.name} doesn't have any remembered documents yet — upload or seed one from Remember first.`
             : "Recall failed",
           emptyMemory: isEmptyMemory,
           cognee: body,

@@ -73,7 +73,7 @@ export function Hero({ art }: { art: string | null }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: EASE }}
         >
-          Persistent clinical memory — built on open-source Cognee
+          Persistent clinical memory, built for care teams
         </motion.p>
 
         <h1 className="display d-hero mt-6 max-w-[16ch]">
@@ -156,12 +156,12 @@ export function Hero({ art }: { art: string | null }) {
               className="inline-block h-1.5 w-1.5 rounded-full"
               style={{ background: "var(--ember)" }}
             />
-            remember()
+            Remember
           </span>
-          <span>recall()</span>
-          <span>improve()</span>
-          <span>forget()</span>
-          <span className="hidden sm:inline">— the four memory operations, made visible</span>
+          <span>Recall</span>
+          <span>Improve</span>
+          <span>Forget</span>
+          <span className="hidden sm:inline">— the four stages of a living patient record</span>
         </motion.div>
       </div>
 

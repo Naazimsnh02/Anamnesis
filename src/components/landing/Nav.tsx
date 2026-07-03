@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
 import { NAV } from "./data";
 
@@ -26,7 +27,15 @@ export function Nav() {
       }}
     >
       <nav className="wrap flex items-center justify-between py-4">
-        <a href="#top" className="flex items-baseline gap-2" aria-label="Anamnesis, home">
+        <a href="#top" className="flex items-center gap-2.5" aria-label="Anamnesis, home">
+          <Image
+            src="/logo.png"
+            alt=""
+            width={32}
+            height={32}
+            className="h-8 w-8 shrink-0 rounded-md mix-blend-multiply"
+            priority
+          />
           <span
             className="display text-[1.35rem] leading-none"
             style={{ letterSpacing: "-0.02em" }}

@@ -1,85 +1,180 @@
-import Image from "next/image";
+import type { SVGProps } from "react";
 import { Reveal, Stagger, StaggerItem } from "./primitives";
 import { FEATURES, HOW, ADVANTAGES, ROADMAP } from "./data";
 
+/* --- thin line icons for fragmented source types --------------------- */
+
+type IconProps = SVGProps<SVGSVGElement>;
+
+const iconProps: IconProps = {
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.4,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+};
+
+function HospitalIcon(props: IconProps) {
+  return (
+    <svg {...iconProps} {...props}>
+      <path d="M5 21V5.5a1 1 0 0 1 .55-.9l6-3a1 1 0 0 1 .9 0l6 3a1 1 0 0 1 .55.9V21" />
+      <path d="M3 21h18" />
+      <path d="M9 21v-4h6v4" />
+      <path d="M12 7v4M10 9h4" />
+    </svg>
+  );
+}
+
+function ClinicIcon(props: IconProps) {
+  return (
+    <svg {...iconProps} {...props}>
+      <path d="M6 3v7a4 4 0 0 0 8 0V3" />
+      <path d="M6 6H4M10 6H8" />
+      <path d="M14 10v3a4 4 0 0 0 4 4 4 4 0 0 0 4-4" />
+      <circle cx="20" cy="17.5" r="1.6" />
+    </svg>
+  );
+}
+
+function LaboratoryIcon(props: IconProps) {
+  return (
+    <svg {...iconProps} {...props}>
+      <path d="M10 3h4" />
+      <path d="M10.5 3v6.2L5.7 18a1.6 1.6 0 0 0 1.4 2.4h9.8a1.6 1.6 0 0 0 1.4-2.4l-4.8-8.8V3" />
+      <path d="M7.5 15h9" />
+    </svg>
+  );
+}
+
+function ImagingIcon(props: IconProps) {
+  return (
+    <svg {...iconProps} {...props}>
+      <path d="M12 3c-2.8 0-4 2-4 5v6c0 3.5 1.6 7 4 7s4-3.5 4-7V8c0-3-1.2-5-4-5Z" />
+      <path d="M8.5 8h7M8 11.5h8M8.3 15h7.4" />
+    </svg>
+  );
+}
+
+function PrescriptionIcon(props: IconProps) {
+  return (
+    <svg {...iconProps} {...props}>
+      <path d="M6 3h6.5A3.5 3.5 0 0 1 16 6.5 3.5 3.5 0 0 1 12.5 10H8" />
+      <path d="M6 3v18" />
+      <path d="M8 10l8 11" />
+      <path d="M12.6 15.5h3.4" />
+    </svg>
+  );
+}
+
+function DischargeIcon(props: IconProps) {
+  return (
+    <svg {...iconProps} {...props}>
+      <path d="M7 3h7l4 4v14H7z" />
+      <path d="M14 3v4h4" />
+      <path d="M9.5 12.5h5M9.5 15.5h5M9.5 18h3" />
+    </svg>
+  );
+}
+
+function NotesIcon(props: IconProps) {
+  return (
+    <svg {...iconProps} {...props}>
+      <path d="M6 3h9l3 3v15H6z" />
+      <path d="M15 3v3h3" />
+      <path d="M9 11h6M9 14h6M9 17h3.5" />
+    </svg>
+  );
+}
+
 const SOURCES = [
-  "Hospital",
-  "Clinic",
-  "Laboratory",
-  "Imaging center",
-  "Prescription",
-  "Discharge summary",
-  "Doctor’s notes",
+  { label: "Hospital", Icon: HospitalIcon },
+  { label: "Clinic", Icon: ClinicIcon },
+  { label: "Laboratory", Icon: LaboratoryIcon },
+  { label: "Imaging center", Icon: ImagingIcon },
+  { label: "Prescription", Icon: PrescriptionIcon },
+  { label: "Discharge summary", Icon: DischargeIcon },
+  { label: "Doctor’s notes", Icon: NotesIcon },
 ];
 
 /* --- Problem -------------------------------------------------------------- */
 
-export function Problem({ art }: { art: string | null }) {
+export function Problem() {
   return (
     <section id="problem" className="section relative overflow-hidden">
-      {art && (
-        <div className="pointer-events-none absolute inset-0 z-0 hidden sm:flex sm:items-center" aria-hidden>
-          <Image
-            src={art}
-            alt=""
-            width={1512}
-            height={648}
-            sizes="100vw"
-            className="h-auto w-full select-none opacity-80"
-            style={{ mixBlendMode: "multiply" }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(to bottom, var(--paper) 0%, transparent 32%, transparent 68%, var(--paper) 100%)",
-            }}
-          />
-        </div>
-      )}
-      <div className="wrap relative z-10 grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
+      <div className="wrap relative z-10">
         <Reveal>
           <p className="eyebrow">The problem</p>
-          <h2 className="display d-xl mt-5 max-w-[14ch]">
+          <h2 className="display d-xl mt-5 max-w-[16ch]">
             History arrives in <em>fragments.</em>
           </h2>
-          <p className="lede mt-6 max-w-[46ch]">
+          <p className="lede mt-6 max-w-[58ch]">
             A single patient&apos;s story is split across seven systems that never speak.
             Every consultation begins by reconstructing it from scratch — so clinicians
             spend their time searching instead of diagnosing.
           </p>
         </Reveal>
 
-        <Stagger className="flex flex-col justify-center">
-          {SOURCES.map((s, i) => (
-            <StaggerItem key={s}>
-              <div
-                className="group flex items-baseline justify-between border-t py-4"
-                style={{ borderColor: "var(--line)" }}
-              >
-                <span className="mono" style={{ fontSize: "0.7rem", color: "var(--ink-faint)" }}>
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span
-                  className="display flex-1 pl-6"
-                  style={{ fontSize: "clamp(1.3rem, 2.4vw, 1.9rem)" }}
-                >
-                  {s}
-                </span>
-                <span className="mono" style={{ fontSize: "0.7rem", color: "var(--ink-faint)" }}>
-                  disconnected
-                </span>
-              </div>
-            </StaggerItem>
-          ))}
-          <div className="border-t" style={{ borderColor: "var(--line)" }} />
-          <StaggerItem>
-            <p className="mt-6 max-w-[42ch] text-[0.95rem]" style={{ color: "var(--ink-soft)" }}>
-              Traditional EHRs store these documents. None of them connect years of
-              events into something that means anything.
-            </p>
-          </StaggerItem>
+        <Stagger className="mt-16">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-14 sm:grid-cols-4 lg:grid-cols-7 lg:gap-x-6">
+            {SOURCES.map(({ label, Icon }, i) => (
+              <StaggerItem key={label}>
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <Icon
+                    className="h-12 w-12 shrink-0 sm:h-14 sm:w-14"
+                    style={{ color: "var(--pen)" }}
+                    aria-hidden
+                  />
+                  <span
+                    className="mono"
+                    style={{ fontSize: "0.72rem", color: "var(--ink-faint)" }}
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span
+                    className="display leading-tight"
+                    style={{ fontSize: "1.2rem" }}
+                  >
+                    {label}
+                  </span>
+                  <span
+                    className="mono"
+                    style={{ fontSize: "0.68rem", letterSpacing: "0.08em", color: "var(--ink-faint)" }}
+                  >
+                    disconnected
+                  </span>
+                </div>
+              </StaggerItem>
+            ))}
+          </div>
+
+          <div
+            className="mt-10 hidden border-t sm:block"
+            style={{ borderColor: "var(--line)" }}
+            aria-hidden
+          >
+            <div className="grid grid-cols-4 gap-x-6 lg:grid-cols-7">
+              {SOURCES.map(({ label }) => (
+                <div key={label} className="flex justify-center">
+                  <span
+                    className="-mt-[4px] block h-[8px] w-[8px] shrink-0 rounded-full"
+                    style={{ background: "var(--pen)" }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </Stagger>
+
+        <div
+          className="mt-14 border-t pt-6"
+          style={{ borderColor: "var(--line)" }}
+        >
+          <p className="max-w-[52ch] text-[0.95rem]" style={{ color: "var(--ink-soft)" }}>
+            Traditional EHRs store these documents. None of them connect years of
+            events into something that means anything.
+          </p>
+        </div>
       </div>
     </section>
   );
@@ -132,7 +227,7 @@ export function Features() {
 
 export function How() {
   return (
-    <section id="how" className="section">
+    <section id="how" className="section section-alt">
       <div className="wrap">
         <Reveal>
           <p className="eyebrow">How it works</p>
@@ -147,7 +242,7 @@ export function How() {
               <div className="flex gap-6">
                 <span
                   className="display shrink-0"
-                  style={{ fontSize: "2.6rem", color: "var(--line)", lineHeight: 1 }}
+                  style={{ fontSize: "2.6rem", color: "var(--ink-faint)", lineHeight: 1 }}
                 >
                   {h.step}
                 </span>
@@ -176,7 +271,7 @@ export function Advantages() {
       <div className="wrap">
         <Reveal>
           <p className="eyebrow">Why it&apos;s different</p>
-          <h2 className="display d-xl mt-5 max-w-[16ch]">
+          <h2 className="display d-xl mt-5 max-w-[36ch]">
             Most clinical AI reads documents. Anamnesis <em>remembers</em> the patient.
           </h2>
         </Reveal>
@@ -211,7 +306,7 @@ export function Advantages() {
 
 export function Roadmap() {
   return (
-    <section id="roadmap" className="section">
+    <section id="roadmap" className="section section-alt">
       <div className="wrap">
         <Reveal>
           <p className="eyebrow">Roadmap</p>

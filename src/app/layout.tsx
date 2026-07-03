@@ -24,19 +24,18 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://anamnesisai.vercel.app"),
   title: "Anamnesis — Every patient's story. Remembered.",
   description:
-    "Anamnesis turns fragmented medical records into one living clinical memory — connected, reasoned over, and always current. Built on self-hosted, open-source Cognee, so patient data never leaves your walls.",
+    "Anamnesis turns fragmented medical records into one living clinical memory — connected, reasoned over, and always current. Runs on infrastructure you control, so patient data never leaves your walls.",
   keywords: [
     "clinical memory",
     "medical records",
     "knowledge graph",
-    "Cognee",
     "healthcare AI",
     "patient history",
   ],
   openGraph: {
     title: "Anamnesis — Every patient's story. Remembered.",
     description:
-      "A persistent clinical memory that remembers, recalls, improves and forgets. Built on self-hosted, open-source Cognee.",
+      "A persistent clinical memory that remembers, recalls, improves and forgets.",
     url: "https://anamnesisai.vercel.app",
     siteName: "Anamnesis",
     images: [{ url: "/generated/hero.png", width: 1408, height: 792 }],
@@ -46,7 +45,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Anamnesis — Every patient's story. Remembered.",
     description:
-      "A persistent clinical memory built on self-hosted, open-source Cognee.",
+      "A persistent clinical memory built on infrastructure you control.",
     images: ["/generated/hero.png"],
   },
 };
