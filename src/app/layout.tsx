@@ -22,7 +22,7 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://anamnesisai.vercel.app"),
-  title: "Anamnesis — Every patient's story. Remembered.",
+  title: "Anamnesis - Every patient's story. Remembered.",
   description:
     "Anamnesis turns fragmented medical records into one living clinical memory — connected, reasoned over, and always current. Runs on infrastructure you control, so patient data never leaves your walls.",
   keywords: [
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     "patient history",
   ],
   openGraph: {
-    title: "Anamnesis — Every patient's story. Remembered.",
+    title: "Anamnesis - Every patient's story. Remembered.",
     description:
       "A persistent clinical memory that remembers, recalls, improves and forgets.",
     url: "https://anamnesisai.vercel.app",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Anamnesis — Every patient's story. Remembered.",
+    title: "Anamnesis - Every patient's story. Remembered.",
     description:
       "A persistent clinical memory built on infrastructure you control.",
     images: ["/generated/hero.png"],

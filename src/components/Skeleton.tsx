@@ -28,6 +28,66 @@ export function SkeletonCard({
   );
 }
 
+// Mimics a page's <h1>/<p class="lede"> header block so route-level
+// loading.tsx skeletons read as "this page, not loaded yet" rather than a
+// generic spinner.
+export function PageHeaderSkeleton() {
+  return (
+    <div>
+      <SkeletonLine width="45%" className="h-8" />
+      <div className="mt-3 flex flex-col gap-2">
+        <SkeletonLine width="90%" />
+        <SkeletonLine width="60%" />
+      </div>
+    </div>
+  );
+}
+
+export function RememberSkeleton() {
+  return (
+    <div className="flex flex-col gap-10">
+      <PageHeaderSkeleton />
+      <section className="card p-6">
+        <h2 className="mono text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
+          Upload a document
+        </h2>
+        <div className="mt-4 flex flex-col gap-4">
+          <SkeletonLine width="140px" className="h-9 rounded" />
+          <SkeletonLine width="220px" className="h-5" />
+          <SkeletonLine width="180px" className="h-9 rounded-full" />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export function AssistantSkeleton() {
+  return (
+    <div className="flex flex-col gap-10">
+      <PageHeaderSkeleton />
+      <section className="card p-6">
+        <h2 className="mono text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
+          Sample questions
+        </h2>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <SkeletonLine key={i} width={`${90 + (i % 3) * 30}px`} className="h-8 rounded-full" />
+          ))}
+        </div>
+      </section>
+      <section className="card p-6">
+        <h2 className="mono text-xs uppercase tracking-[0.15em] text-[var(--ink-soft)]">
+          Ask a question
+        </h2>
+        <div className="mt-4 flex gap-3">
+          <SkeletonLine width="100%" className="h-9 rounded" />
+          <SkeletonLine width="90px" className="h-9 shrink-0 rounded" />
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-10">

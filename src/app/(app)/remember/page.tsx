@@ -5,6 +5,8 @@ import { useState } from "react";
 import type { ExtractedEntities } from "@/lib/gemini";
 import { useActivePatient } from "@/lib/useActivePatient";
 import { useOpsLog } from "@/lib/opsLog";
+import { Select } from "@/components/ui/Select";
+import { useRef } from "react";
 
 const DOCUMENT_TYPES = [
   { value: "blood_report", label: "Blood report" },
@@ -26,6 +28,7 @@ type UploadResult = {
 export default function RememberPage() {
   const { activePatient, patients, loading: patientsLoading, refreshAll } = useActivePatient();
   const { logOp } = useOpsLog();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [documentType, setDocumentType] = useState<(typeof DOCUMENT_TYPES)[number]["value"]>(
     "blood_report"
   );
@@ -150,27 +153,35 @@ export default function RememberPage() {
               Upload a document
             </h2>
             <div className="mt-4 flex flex-col gap-4">
-              <select
+              <Select
                 value={documentType}
-                onChange={(e) => setDocumentType(e.target.value as typeof documentType)}
-                className="w-fit rounded border border-[var(--line)] bg-white px-3 py-2 text-sm"
-              >
-                {DOCUMENT_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="file"
-                accept="application/pdf,image/*"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="text-sm"
+                onChange={(v) => setDocumentType(v as typeof documentType)}
+                options={DOCUMENT_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+                className="w-fit"
               />
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="application/pdf,image/*"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mono flex items-center justify-between gap-2 rounded-full border border-[var(--line)] bg-transparent px-3 py-1.5 text-xs text-[var(--ink)] transition hover:border-[var(--pen)] hover:bg-[var(--paper-2)]"
+                >
+                  Choose file
+                </button>
+                <span className="mono text-xs text-[var(--ink-soft)]">
+                  {file ? file.name : "No file chosen"}
+                </span>
+              </div>
               <button
                 onClick={handleUpload}
                 disabled={!file || busy !== null}
-                className="btn btn-primary w-fit"
+                className="btn btn-primary w-fit text-sm"
               >
                 {busy === "upload" ? "Extracting & remembering…" : "Upload & remember"}
               </button>
