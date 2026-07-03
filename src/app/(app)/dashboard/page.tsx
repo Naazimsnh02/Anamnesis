@@ -191,7 +191,7 @@ export default function DashboardPage() {
                       onClick={() => saveOverview({ upcomingAppointment: null })}
                       className="mono text-xs text-[var(--ink-faint)] hover:underline"
                     >
-                      clear
+                      Clear
                     </button>
                   </p>
                 ) : (
@@ -243,7 +243,7 @@ export default function DashboardPage() {
                   }}
                 >
                   <input
-                    placeholder="add an allergy"
+                    placeholder="Add an allergy"
                     value={allergyInput}
                     onChange={(e) => setAllergyInput(e.target.value)}
                     className="w-40 rounded-lg border border-[var(--line)] bg-white px-3 py-1.5 text-xs mono transition hover:border-[var(--pen)] focus:border-[var(--pen)] focus:outline-none"
@@ -281,15 +281,15 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex gap-2">
                       <input
-                        placeholder="optional note"
+                        placeholder="Optional note"
                         value={notes[key] ?? ""}
                         onChange={(e) => setNotes((prev) => ({ ...prev, [key]: e.target.value }))}
-                        className="w-40 rounded border border-[var(--line)] bg-white px-2 py-1 text-xs"
+                        className="w-40 rounded-lg border border-[var(--line)] bg-white px-3 py-1.5 text-xs mono transition hover:border-[var(--pen)] focus:border-[var(--pen)] focus:outline-none"
                       />
                       <button
                         onClick={() => markStatus("diagnosis", dx.name)}
                         disabled={busyKey !== null}
-                        className="btn btn-primary shrink-0 text-xs"
+                        className="mono shrink-0 text-xs text-[var(--pen)] hover:underline disabled:opacity-50"
                       >
                         {busyKey === key ? "Marking…" : "Mark ruled out"}
                       </button>
@@ -320,15 +320,15 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex gap-2">
                       <input
-                        placeholder="optional note"
+                        placeholder="Optional note"
                         value={notes[key] ?? ""}
                         onChange={(e) => setNotes((prev) => ({ ...prev, [key]: e.target.value }))}
-                        className="w-40 rounded border border-[var(--line)] bg-white px-2 py-1 text-xs"
+                        className="w-40 rounded-lg border border-[var(--line)] bg-white px-3 py-1.5 text-xs mono transition hover:border-[var(--pen)] focus:border-[var(--pen)] focus:outline-none"
                       />
                       <button
                         onClick={() => markStatus("medication", med.name)}
                         disabled={busyKey !== null}
-                        className="btn btn-primary shrink-0 text-xs"
+                        className="mono shrink-0 text-xs text-[var(--pen)] hover:underline disabled:opacity-50"
                       >
                         {busyKey === key ? "Marking…" : "Mark discontinued"}
                       </button>

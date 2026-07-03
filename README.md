@@ -41,7 +41,7 @@ Every one of these operations is visible in the app's live operations panel. Ana
 
 Beyond its core memory engine, Anamnesis implements a full suite of clinical tools mapping directly to its page routes:
 
-### 1. Unified Patient Dashboard (`/dashboard`)
+### 1. Unified Patient Dashboard
 *   **Patient Overview Card**: Real-time status summarizing active diagnoses, current medications, last recorded visit, upcoming appointments, and fully manageable allergy lists (add/remove).
 *   **Clinical Timeline**: A chronological history of all clinical events (diagnoses, medications, visits, and uploaded documents).
 *   **Live Interactive Memory Graph**: A dynamic SVG visualization of the patient's Cognee knowledge graph showing active nodes (entities) and edges (relationships) that grows in real-time.
@@ -51,22 +51,18 @@ Beyond its core memory engine, Anamnesis implements a full suite of clinical too
 *   **Actionable Roster**: Clinicians can mark conditions as "ruled out" or medications as "discontinued" directly from the dashboard, attaching an optional note.
 *   **Graph Corrections**: Submitting corrections executes Cognee's `improve` pipeline, restructuring graph facts to reflect the clinical correction.
 
-### 3. Document Ingestion & Vision OCR (`/remember`)
+### 3. Document Ingestion & Vision OCR
 *   **Multi-Format Uploads**: Support for PDFs and image files across clinical categories (Blood reports, Prescriptions, Discharge summaries, Imaging reports).
 *   **Gemini Vision OCR**: Extracts structured clinical entities (diagnoses, medications, and precise lab test values with units) in a single step.
 *   **Intelligent Deduplication**: When a document of the same type and date is uploaded, Anamnesis triggers Cognee's `forget` routine to replace/merge the duplicate document to avoid duplicate entities.
 
-### 4. Graph Recall Assistant (`/assistant`)
+### 4. Graph Recall Assistant
 *   **Natural Language Querying**: Asks questions directly to the patient's graph database using Cognee semantic recall.
 *   **Traceable Evidence Chains**: Answers are returned with step-by-step trace nodes from the knowledge graph, showing the exact source snippet, document type, and document date.
 *   **Suggested Questions**: One-click preset queries (e.g., *“Why is kidney function declining?”*, *“What changed since the previous consultation?”*) to speed up clinical review.
 
-### 5. Multi-Tenant Onboarding (`/onboarding`)
+### 5. Multi-Tenant Onboarding
 *   **Clerk Organizations Integration**: Scopes all clinician users, patient rosters, audit logs, and Cognee dataset memory securely to an organization/clinic.
-
-### 6. Built-in Connectivity Diagnostics (`/debug`)
-*   **Cognee Health Checks**: Verification tool for developers to test local or remote Cognee connectivity.
-*   **Sandbox Executions**: Run sandboxed `remember()` and `recall()` operations directly, viewing real-time JSON response payloads from the underlying Cognee engine.
 
 ---
 
