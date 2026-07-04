@@ -7,7 +7,9 @@
 
 <p align="center">
   <a href="https://anamnesisai.vercel.app"><img src="https://img.shields.io/badge/Live%20App-anamnesisai.vercel.app-1f6feb?style=flat-square" alt="Live App"></a>
+  <a href="https://youtu.be/IH7V3kgMxo8"><img src="https://img.shields.io/badge/Demo-Watch%20on%20YouTube-FF0000?style=flat-square&logo=youtube&logoColor=white" alt="Demo Video"></a>
   <img src="https://img.shields.io/badge/Hackathon-Cognee:%20Best%20Use%20of%20Open%20Source-orange?style=flat-square" alt="Hackathon Track">
+  <a href="https://dev.to/naazim_hussain_7fbe686d11/what-building-anamnesis-taught-me-about-giving-ai-a-memory-1lnc"><img src="https://img.shields.io/badge/Side%20Track-Best%20Blogs-0A0A0A?style=flat-square&logo=dev.to&logoColor=white" alt="Side Track: Best Blogs"></a>
   <img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js" alt="Next.js 16">
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
   <img src="https://img.shields.io/badge/Memory%20Engine-Cognee%20(self--hosted)-8A2BE2?style=flat-square" alt="Memory Engine">
@@ -34,6 +36,44 @@ It's built on top of **[Cognee](https://github.com/topoteretes/cognee)**'s four 
 Every one of these operations is visible in the app's live operations panel. Anamnesis is designed *through* Cognee, not around it.
 
 **Live app:** [anamnesisai.vercel.app](https://anamnesisai.vercel.app)
+
+---
+
+## Demo Video
+
+Watch a walkthrough of Anamnesis in action:
+
+[![Anamnesis Demo](https://img.youtube.com/vi/IH7V3kgMxo8/maxresdefault.jpg)](https://youtu.be/IH7V3kgMxo8)
+
+**[Watch on YouTube](https://youtu.be/IH7V3kgMxo8)** — See how the platform ingests patient documents, builds a connected memory graph, and answers clinical questions with traceable evidence chains.
+
+**Read the build story:** [What Building Anamnesis Taught Me About Giving AI a Memory](https://dev.to/naazim_hussain_7fbe686d11/what-building-anamnesis-taught-me-about-giving-ai-a-memory-1lnc) (dev.to, Side Track · Best Blogs)
+
+---
+
+## Screenshots
+
+A quick look at the product experience:
+
+<div align="center">
+  <img src="public/Hero.png" alt="Anamnesis hero screen" width="48%" />
+  <img src="public/Dashboard.png" alt="Patient dashboard" width="48%" />
+</div>
+
+<div align="center">
+  <img src="public/Memory.png" alt="Memory view" width="48%" />
+  <img src="public/Memory Graph.png" alt="Memory graph" width="48%" />
+</div>
+
+<div align="center">
+  <img src="public/Problem.png" alt="Problem framing" width="48%" />
+  <img src="public/Feature.png" alt="Feature highlight" width="48%" />
+</div>
+
+<div align="center">
+  <img src="public/Assistant.png" alt="Assistant experience" width="48%" />
+  <img src="public/Remember.png" alt="Remember experience" width="48%" />
+</div>
 
 ---
 
